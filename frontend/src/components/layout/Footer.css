@@ -1,0 +1,740 @@
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.footer {
+  position: relative;
+  overflow: hidden;
+  padding-top: 78px;
+
+  background:
+    radial-gradient(
+      circle at 10% 0%,
+      rgba(37, 99, 235, 0.16),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 90% 20%,
+      rgba(6, 182, 212, 0.1),
+      transparent 28%
+    ),
+    var(--surface-dark);
+
+  color: #cbd5e1;
+
+  /* SaaS grid */
+  background-image:
+    radial-gradient(
+      circle at 10% 0%,
+      rgba(37, 99, 235, 0.16),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 90% 20%,
+      rgba(6, 182, 212, 0.1),
+      transparent 28%
+    ),
+    linear-gradient(
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px
+    );
+
+  background-size:
+    auto,
+    auto,
+    48px 48px,
+    48px 48px;
+}
+
+
+/* =========================================================
+   CTA → FOOTER SAAS SHINING DIVIDER
+========================================================= */
+
+.footer {
+  border-top: 0;
+}
+
+/* Main glowing line */
+.footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 10;
+
+  width: min(92%, 1120px);
+  height: 1px;
+
+  transform: translateX(-50%);
+
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(37, 99, 235, 0.08) 10%,
+    rgba(37, 99, 235, 0.5) 28%,
+    rgba(6, 182, 212, 0.9) 42%,
+    #ffffff 50%,
+    rgba(6, 182, 212, 0.9) 58%,
+    rgba(37, 99, 235, 0.5) 72%,
+    rgba(37, 99, 235, 0.08) 90%,
+    transparent 100%
+  );
+
+  box-shadow:
+    0 0 5px rgba(6, 182, 212, 0.55),
+    0 0 16px rgba(37, 99, 235, 0.35),
+    0 0 32px rgba(6, 182, 212, 0.18);
+}
+
+
+/* Moving shine */
+.footer::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 5%;
+  z-index: 11;
+
+  width: 150px;
+  height: 5px;
+
+  border-radius: 999px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.95),
+    rgba(6, 182, 212, 1),
+    rgba(255, 255, 255, 0.95),
+    transparent
+  );
+
+  filter: blur(1px);
+  opacity: 0;
+
+  animation:
+    footerShiningLine
+    4.5s
+    ease-in-out
+    infinite;
+}
+
+@keyframes footerShiningLine {
+  0% {
+    left: 5%;
+    opacity: 0;
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  50% {
+    left: calc(100% - 150px);
+    opacity: 1;
+  }
+
+  65% {
+    opacity: 0;
+  }
+
+  100% {
+    left: calc(100% - 150px);
+    opacity: 0;
+  }
+}
+
+
+/* =========================================================
+   MAIN FOOTER CONTENT
+========================================================= */
+
+.footer-grid {
+  position: relative;
+  z-index: 1;
+
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.3fr;
+  gap: 48px;
+
+  padding-bottom: 58px;
+}
+
+
+/* =========================================================
+   BRAND
+========================================================= */
+
+.footer-brand {
+  max-width: 390px;
+}
+
+.footer-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+
+  color: var(--text-white);
+}
+
+.brand-mark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+
+  place-items: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 11px;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--primary),
+      var(--secondary)
+    );
+
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 800;
+
+  box-shadow:
+    0 10px 30px rgba(37, 99, 235, 0.25);
+}
+
+.footer-brand-text {
+  display: flex;
+  flex-direction: column;
+
+  line-height: 1.1;
+}
+
+.footer-brand-text strong {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.footer-brand-text small {
+  margin-top: 4px;
+
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   BRAND DESCRIPTION
+========================================================= */
+
+.footer-brand p {
+  max-width: 360px;
+  margin-top: 20px;
+
+  color: #94a3b8;
+  font-size: 0.87rem;
+  line-height: 1.8;
+}
+
+
+/* =========================================================
+   TAGLINE
+========================================================= */
+
+.footer-tagline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  margin-top: 22px;
+
+  color: #cbd5e1;
+  font-size: 0.73rem;
+  font-weight: 700;
+}
+
+.footer-tagline-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+
+  border-radius: 50%;
+
+  background: var(--success);
+
+  box-shadow:
+    0 0 0 4px rgba(16, 185, 129, 0.1),
+    0 0 14px rgba(16, 185, 129, 0.35);
+}
+
+
+/* =========================================================
+   FOOTER COLUMNS
+========================================================= */
+
+.footer-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer-column h3 {
+  margin-bottom: 9px;
+
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.footer-column a,
+.footer-column span {
+  position: relative;
+
+  width: fit-content;
+
+  color: #94a3b8;
+  font-size: 0.82rem;
+  line-height: 1.5;
+
+  transition:
+    color var(--transition),
+    transform var(--transition);
+}
+
+.footer-column a,
+.footer-column span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.footer-column a:hover {
+  color: #ffffff;
+  transform: translateX(3px);
+}
+
+
+.footer-dashboard-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  width: fit-content;
+  padding: 0;
+
+  border: 0;
+  background: transparent;
+
+  color: #94a3b8;
+  font-family: inherit;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  font-weight: inherit;
+
+  cursor: pointer;
+
+  transition:
+    color var(--transition),
+    transform var(--transition);
+}
+
+.footer-dashboard-link:hover {
+  color: #ffffff;
+  transform: translateX(3px);
+}
+
+.footer-dashboard-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+
+/* =========================================================
+   CONTACT CARD
+========================================================= */
+
+.footer-contact-card {
+  padding: 17px;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.footer-contact-card strong {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #ffffff;
+  font-size: 0.8rem;
+}
+
+.footer-contact-card span {
+  display: block;
+
+  color: #94a3b8;
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+
+
+/* =========================================================
+   TECHNOLOGY LINE
+========================================================= */
+
+.footer-tech-line {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  margin-bottom: 24px;
+
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.footer-tech-line strong {
+  color: #94a3b8;
+}
+
+.footer-tech-separator {
+  color: #334155;
+}
+
+
+/* =========================================================
+   BOTTOM FOOTER
+========================================================= */
+
+.footer-bottom {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  padding: 22px 0;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+
+  color: #64748b;
+  font-size: 0.72rem;
+}
+
+.footer-bottom p {
+  line-height: 1.6;
+}
+
+.footer-bottom div {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.footer-bottom a {
+  transition: color var(--transition);
+}
+
+.footer-bottom a:hover {
+  color: #ffffff;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 1000px) {
+  .footer-grid {
+    grid-template-columns: 1.5fr 1fr 1fr;
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1;
+    max-width: 600px;
+  }
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+  .footer {
+    padding-top: 60px;
+  }
+
+  .footer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 42px 28px;
+
+    padding-bottom: 44px;
+  }
+
+  /* Brand */
+  .footer-brand {
+    grid-column: 1 / -1;
+
+    max-width: 520px;
+    margin: 0 auto;
+
+    text-align: center;
+  }
+
+  .footer-logo {
+    justify-content: center;
+  }
+
+  .footer-brand p {
+    max-width: 480px;
+    margin: 20px auto 0;
+  }
+
+  .footer-tagline {
+    justify-content: center;
+
+    margin-top: 20px;
+  }
+
+  /* Columns */
+  .footer-column {
+    min-width: 0;
+    gap: 12px;
+  }
+
+  .footer-column h3 {
+    margin-bottom: 7px;
+  }
+
+  .footer-column a,
+  .footer-column span {
+    font-size: 0.78rem;
+  }
+
+  /* Connect */
+  .footer-column:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .footer-contact-card {
+    width: 100%;
+    padding: 16px;
+  }
+
+  /* Technology */
+  .footer-tech-line {
+    justify-content: center;
+    flex-wrap: wrap;
+
+    max-width: 500px;
+    margin: 0 auto 22px;
+
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  /* Bottom */
+  .footer-bottom {
+    flex-direction: column;
+    align-items: center;
+
+    gap: 14px;
+
+    padding: 20px 0;
+
+    text-align: center;
+  }
+
+  .footer-bottom p {
+    max-width: 340px;
+  }
+
+  .footer-bottom div {
+    justify-content: center;
+    flex-wrap: wrap;
+
+    gap: 10px 20px;
+  }
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 500px) {
+  .footer {
+    padding-top: 52px;
+  }
+
+  .footer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 36px 20px;
+
+    padding-bottom: 38px;
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1;
+  }
+
+  .footer-brand p {
+    font-size: 0.82rem;
+    line-height: 1.75;
+  }
+
+  .footer-tagline {
+    max-width: 280px;
+    margin-inline: auto;
+
+    line-height: 1.5;
+  }
+
+  .footer-column {
+    gap: 10px;
+  }
+
+  .footer-column h3 {
+    font-size: 0.68rem;
+  }
+
+  .footer-column a,
+  .footer-column span {
+    font-size: 0.75rem;
+  }
+
+  .footer-contact-card {
+    padding: 15px;
+  }
+
+  .footer-contact-card strong {
+    font-size: 0.78rem;
+  }
+
+  .footer-contact-card span {
+    font-size: 0.7rem;
+  }
+
+  .footer-tech-line {
+    max-width: 320px;
+
+    margin-inline: auto;
+
+    line-height: 1.7;
+  }
+
+  .footer-bottom {
+    padding-bottom: 22px;
+  }
+
+  .footer-bottom p {
+    font-size: 0.68rem;
+  }
+
+  .footer-bottom div {
+    gap: 10px 18px;
+  }
+
+  .footer-bottom a {
+    font-size: 0.68rem;
+  }
+}
+
+
+/* =========================================================
+   VERY SMALL PHONES
+========================================================= */
+
+@media (max-width: 380px) {
+  .footer-grid {
+    column-gap: 14px;
+  }
+
+  .footer-column a,
+  .footer-column span {
+    font-size: 0.72rem;
+  }
+
+  .footer-brand p {
+    font-size: 0.79rem;
+  }
+
+  .footer-tagline {
+    font-size: 0.68rem;
+  }
+}
+
+
+/* =========================================================
+   MOBILE SHINING DIVIDER
+========================================================= */
+
+@media (max-width: 600px) {
+  .footer::before {
+    width: 88%;
+  }
+
+  .footer::after {
+    width: 100px;
+  }
+
+  @keyframes footerShiningLine {
+    0% {
+      left: 6%;
+      opacity: 0;
+    }
+
+    12% {
+      opacity: 1;
+    }
+
+    50% {
+      left: calc(100% - 100px);
+      opacity: 1;
+    }
+
+    65% {
+      opacity: 0;
+    }
+
+    100% {
+      left: calc(100% - 100px);
+      opacity: 0;
+    }
+  }
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .footer::after,
+  .footer-column a {
+    animation: none;
+    transition: none;
+  }
+}
+

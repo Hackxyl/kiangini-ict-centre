@@ -1,0 +1,1100 @@
+.officer-dashboard {
+  width: 100%;
+}
+
+.officer-dashboard-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* =========================================
+   HEADER
+========================================= */
+
+.officer-dashboard-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.officer-dashboard-header h1 {
+  margin-top: 8px;
+  color: var(--text-primary);
+  font-size: clamp(2rem, 4vw, 2.7rem);
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  font-weight: 800;
+}
+
+.officer-dashboard-header p {
+  max-width: 650px;
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.officer-refresh-button {
+  flex: 0 0 auto;
+}
+
+/* =========================================
+   ERROR
+========================================= */
+
+.officer-dashboard-error {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 18px;
+  padding: 13px 15px;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  background: var(--danger-light);
+  color: var(--danger-dark);
+  font-size: 0.78rem;
+}
+
+.officer-dashboard-error span {
+  flex: 1;
+}
+
+.officer-dashboard-error button {
+  padding: 5px 9px;
+  border-radius: 7px;
+  background: var(--danger-dark);
+  color: var(--text-white);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+/* =========================================
+   MAIN STATISTICS
+========================================= */
+
+.officer-dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.officer-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 105px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  transition:
+    transform var(--transition),
+    box-shadow var(--transition);
+}
+
+.officer-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.officer-stat-icon {
+  display: grid;
+  width: 43px;
+  height: 43px;
+  flex: 0 0 43px;
+  place-items: center;
+  border-radius: 12px;
+}
+
+.officer-stat-icon.total {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.officer-stat-icon.pending {
+  background: var(--warning-light);
+  color: var(--warning-dark);
+}
+
+.officer-stat-icon.approved {
+  background: var(--success-light);
+  color: var(--success-dark);
+}
+
+.officer-stat-icon.rejected {
+  background: var(--danger-light);
+  color: var(--danger-dark);
+}
+
+.officer-stat-card span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.officer-stat-card strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-primary);
+  font-size: 1.45rem;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.officer-stat-card small {
+  display: block;
+  margin-top: 5px;
+  color: var(--text-light);
+  font-size: 0.62rem;
+}
+
+/* =========================================
+   SECONDARY STATISTICS
+========================================= */
+
+.officer-secondary-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.officer-secondary-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 72px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.officer-secondary-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  border-radius: 10px;
+}
+
+.officer-secondary-icon.facility {
+  background: var(--accent-light);
+  color: var(--accent-dark);
+}
+
+.officer-secondary-icon.maintenance {
+  background: var(--warning-light);
+  color: var(--warning-dark);
+}
+
+.officer-secondary-icon.announcements {
+  background: var(--secondary-light);
+  color: var(--secondary-dark);
+}
+
+.officer-secondary-icon.activity {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.officer-secondary-card span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  font-weight: 600;
+}
+
+.officer-secondary-card strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+/* =========================================
+   SECTION HEADING
+========================================= */
+
+.officer-dashboard-section {
+  margin-bottom: 22px;
+}
+
+.officer-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.officer-section-heading h2 {
+  margin-top: 5px;
+  color: var(--text-primary);
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+}
+
+/* =========================================
+   OPERATIONAL ALERTS
+========================================= */
+
+.officer-alert-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.officer-alert-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  min-height: 105px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.officer-alert-card.warning {
+  border-color: #fde68a;
+  background: var(--warning-light);
+}
+
+.officer-alert-card.danger {
+  border-color: #fecaca;
+  background: var(--danger-light);
+}
+
+.officer-alert-card.info {
+  border-color: #bfdbfe;
+  background: var(--info-light);
+}
+
+.officer-alert-icon {
+  display: grid;
+  width: 35px;
+  height: 35px;
+  flex: 0 0 35px;
+  place-items: center;
+  border-radius: 10px;
+}
+
+.officer-alert-card.warning .officer-alert-icon {
+  background: #fef3c7;
+  color: var(--warning-dark);
+}
+
+.officer-alert-card.danger .officer-alert-icon {
+  background: #fee2e2;
+  color: var(--danger-dark);
+}
+
+.officer-alert-card.info .officer-alert-icon {
+  background: #dbeafe;
+  color: var(--info);
+}
+
+.officer-alert-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.officer-alert-content strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.officer-alert-content span {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 0.67rem;
+  line-height: 1.5;
+}
+
+.officer-alert-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: auto;
+  color: var(--text-primary);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+/* =========================================
+   MAIN GRID
+========================================= */
+
+.officer-dashboard-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.6fr)
+    minmax(280px, 0.8fr);
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.officer-panel {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.officer-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 24px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.officer-panel-header h2 {
+  margin-top: 6px;
+  color: var(--text-primary);
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
+.officer-panel-header p {
+  margin-top: 5px;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.officer-panel-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  color: var(--primary-dark);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.officer-panel-link:hover {
+  color: var(--secondary-dark);
+}
+
+/* =========================================
+   PANEL STATES
+========================================= */
+
+.officer-panel-state {
+  display: flex;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.officer-empty-state {
+  flex-direction: column;
+  gap: 7px;
+  text-align: center;
+}
+
+.officer-empty-state svg {
+  margin-bottom: 3px;
+  color: var(--success);
+}
+
+.officer-empty-state strong {
+  color: var(--text-primary);
+  font-size: 0.88rem;
+}
+
+.officer-empty-state span {
+  max-width: 300px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+/* =========================================
+   PENDING REQUESTS
+========================================= */
+
+.officer-request-list {
+  padding: 8px 12px 12px;
+}
+
+.officer-request-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 12px;
+  border-bottom: 1px solid var(--border-light);
+  transition:
+    background var(--transition),
+    transform var(--transition);
+}
+
+.officer-request-item:last-child {
+  border-bottom: 0;
+}
+
+.officer-request-item:hover {
+  background: var(--surface-soft);
+}
+
+.officer-request-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.officer-request-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.officer-request-info strong {
+  display: block;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.officer-request-info span {
+  display: block;
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.officer-request-date {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.officer-request-date strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 0.72rem;
+}
+
+.officer-request-date span {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+}
+
+.officer-request-arrow {
+  flex: 0 0 auto;
+  color: var(--text-light);
+}
+
+.officer-request-item:hover .officer-request-arrow {
+  color: var(--primary);
+}
+
+/* =========================================
+   QUICK ACTIONS
+========================================= */
+
+.officer-quick-actions {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+}
+
+.officer-quick-action {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text-secondary);
+  transition:
+    border-color var(--transition),
+    background var(--transition),
+    color var(--transition),
+    transform var(--transition);
+}
+
+.officer-quick-action:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+.officer-quick-action.primary {
+  border-color: transparent;
+  background: var(--primary);
+  color: var(--text-white);
+}
+
+.officer-quick-action.primary:hover {
+  background: var(--primary-dark);
+}
+
+.officer-quick-action.facility:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent-dark);
+}
+
+.officer-quick-action.announcement:hover {
+  border-color: var(--secondary);
+  background: var(--secondary-light);
+  color: var(--secondary-dark);
+}
+
+.officer-quick-action.activity:hover {
+  border-color: var(--success);
+  background: var(--success-light);
+  color: var(--success-dark);
+}
+
+.officer-quick-action div {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.officer-quick-action strong {
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.officer-quick-action span {
+  margin-top: 3px;
+  font-size: 0.7rem;
+  opacity: 0.75;
+}
+
+.officer-quick-action > svg:last-child {
+  flex: 0 0 auto;
+  color: currentColor;
+  opacity: 0.55;
+}
+
+/* =========================================
+   LOWER DASHBOARD GRID
+========================================= */
+
+.officer-dashboard-lower-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+/* =========================================
+   FACILITY OVERVIEW
+========================================= */
+
+.officer-facility-overview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 18px;
+}
+
+.facility-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 92px;
+  padding: 15px;
+  border-radius: var(--radius-lg);
+}
+
+.facility-summary > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.facility-summary span {
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.facility-summary strong {
+  margin-top: 3px;
+  color: var(--text-primary);
+  font-size: 1.35rem;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.facility-summary svg {
+  flex: 0 0 auto;
+}
+
+.facility-summary.available {
+  background: var(--success-light);
+  color: var(--success-dark);
+}
+
+.facility-summary.maintenance {
+  background: var(--warning-light);
+  color: var(--warning-dark);
+}
+
+.facility-summary.inactive {
+  background: var(--danger-light);
+  color: var(--danger-dark);
+}
+
+/* =========================================
+   ANNOUNCEMENTS
+========================================= */
+
+.officer-announcement-list {
+  padding: 8px 12px 12px;
+}
+
+.officer-announcement-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
+  transition:
+    background var(--transition),
+    color var(--transition);
+}
+
+.officer-announcement-item:last-child {
+  border-bottom: 0;
+}
+
+.officer-announcement-item:hover {
+  background: var(--surface-soft);
+  color: var(--primary-dark);
+}
+
+.officer-announcement-icon {
+  display: grid;
+  width: 35px;
+  height: 35px;
+  flex: 0 0 35px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--secondary-light);
+  color: var(--secondary-dark);
+}
+
+.officer-announcement-item > div:nth-child(2) {
+  min-width: 0;
+  flex: 1;
+}
+
+.officer-announcement-item strong {
+  display: block;
+  overflow: hidden;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.officer-announcement-item span {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 0.63rem;
+}
+
+.officer-announcement-item > svg:last-child {
+  flex: 0 0 auto;
+  color: var(--text-light);
+}
+
+/* =========================================
+   RECENT ACTIVITY
+========================================= */
+
+.officer-activity-panel {
+  margin-bottom: 18px;
+}
+
+.officer-activity-list {
+  padding: 8px 18px 14px;
+}
+
+.officer-activity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 6px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.officer-activity-item:last-child {
+  border-bottom: 0;
+}
+
+.officer-activity-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  border-radius: 10px;
+}
+
+.officer-activity-icon.booking {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.officer-activity-icon.facility {
+  background: var(--accent-light);
+  color: var(--accent-dark);
+}
+
+.officer-activity-icon.announcement {
+  background: var(--secondary-light);
+  color: var(--secondary-dark);
+}
+
+.officer-activity-icon.user {
+  background: var(--success-light);
+  color: var(--success-dark);
+}
+
+.officer-activity-icon.system {
+  background: var(--surface-soft);
+  color: var(--text-secondary);
+}
+
+.officer-activity-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.officer-activity-content strong {
+  display: block;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.officer-activity-content span {
+  display: block;
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.officer-activity-item time {
+  flex: 0 0 auto;
+  color: var(--text-light);
+  font-size: 0.62rem;
+}
+
+/* =========================================
+   BOOKING DISTRIBUTION
+========================================= */
+
+.officer-booking-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(
+      135deg,
+      var(--surface) 0%,
+      var(--primary-light) 100%
+    );
+  box-shadow: var(--shadow-xs);
+}
+
+.officer-booking-summary-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.officer-booking-summary-icon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--primary);
+  color: var(--text-white);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+}
+
+.officer-booking-summary-content h2 {
+  margin-top: 4px;
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
+.officer-booking-summary-content p {
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+}
+
+.officer-booking-distribution {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(65px, 1fr));
+  gap: 8px;
+  min-width: 390px;
+}
+
+.officer-booking-distribution > div {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.7);
+  text-align: center;
+}
+
+.officer-booking-distribution span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.61rem;
+  font-weight: 700;
+}
+
+.officer-booking-distribution strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+/* =========================================
+   REFRESH ANIMATION
+========================================= */
+
+.officer-refresh-icon {
+  animation: officerRefreshSpin 0.9s linear infinite;
+}
+
+@keyframes officerRefreshSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 1200px) {
+  .officer-alert-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .officer-booking-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .officer-booking-distribution {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 1100px) {
+  .officer-dashboard-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .officer-secondary-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .officer-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .officer-dashboard-lower-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 640px) {
+  .officer-dashboard-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .officer-dashboard-header .btn {
+    width: 100%;
+  }
+
+  .officer-dashboard-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .officer-secondary-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .officer-panel-header {
+    padding: 19px;
+  }
+
+  .officer-request-item {
+    align-items: flex-start;
+  }
+
+  .officer-request-date {
+    display: none;
+  }
+
+  .officer-request-arrow {
+    margin-top: 10px;
+  }
+
+  .officer-alert-card {
+    min-height: auto;
+  }
+
+  .officer-facility-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .facility-summary {
+    min-height: 70px;
+  }
+
+  .officer-booking-summary {
+    padding: 20px;
+  }
+
+  .officer-booking-summary-content {
+    align-items: flex-start;
+  }
+
+  .officer-booking-distribution {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .officer-activity-item time {
+    display: none;
+  }
+}
+
+/* =========================================
+   SMALL MOBILE
+========================================= */
+
+@media (max-width: 480px) {
+  .officer-dashboard-header {
+    margin-bottom: 22px;
+  }
+
+  .officer-dashboard-header h1 {
+    font-size: 1.85rem;
+  }
+
+  .officer-dashboard-header p {
+    font-size: 0.8rem;
+  }
+
+  .officer-secondary-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .officer-stat-card {
+    min-height: 92px;
+    padding: 16px;
+  }
+
+  .officer-panel-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .officer-panel-link {
+    align-self: flex-start;
+  }
+
+  .officer-quick-actions {
+    padding: 14px;
+  }
+
+  .officer-quick-action {
+    padding: 14px;
+  }
+
+  .officer-alert-card {
+    padding: 14px;
+  }
+
+  .officer-booking-summary-content {
+    gap: 10px;
+  }
+
+  .officer-booking-summary-icon {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+
+  .officer-booking-summary-content h2 {
+    font-size: 0.95rem;
+  }
+
+  .officer-booking-summary-content p {
+    font-size: 0.66rem;
+  }
+}

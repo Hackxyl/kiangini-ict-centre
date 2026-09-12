@@ -1,0 +1,1204 @@
+.officer-announcements-page {
+  min-height: calc(100vh - var(--navbar-height));
+  padding: 42px 0 80px;
+  background:
+    radial-gradient(
+      circle at 8% 0%,
+      rgba(37, 99, 235, 0.045),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 92% 18%,
+      rgba(6, 182, 212, 0.04),
+      transparent 26%
+    ),
+    var(--background);
+}
+
+.officer-page-container {
+  width: min(100% - 40px, 1400px);
+  margin: 0 auto;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.officer-announcements-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 28px;
+}
+
+.officer-dashboard-eyebrow {
+  display: inline-flex;
+  color: var(--primary-dark);
+  font-size: 0.68rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.officer-announcements-header h1 {
+  margin-top: 6px;
+  color: var(--text-primary);
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  font-weight: 800;
+}
+
+.officer-announcements-header p {
+  max-width: 680px;
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.75;
+}
+
+.officer-announcements-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.officer-refresh-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  transition:
+    border-color var(--transition),
+    background var(--transition),
+    color var(--transition),
+    transform var(--transition),
+    box-shadow var(--transition);
+}
+
+.officer-refresh-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  box-shadow: var(--shadow-sm);
+}
+
+.officer-refresh-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.officer-create-button {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.officer-refreshing {
+  animation: officer-spin 0.85s linear infinite;
+}
+
+@keyframes officer-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+.officer-announcements-error {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 22px;
+  padding: 14px 16px;
+  border: 1px solid rgba(239, 68, 68, 0.16);
+  border-radius: var(--radius-lg);
+  background: var(--danger-light);
+  color: var(--danger-dark);
+}
+
+.officer-announcements-error > svg {
+  flex: 0 0 auto;
+}
+
+.officer-announcements-error > div {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.officer-announcements-error strong {
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.officer-announcements-error span {
+  color: #b91c1c;
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.officer-announcements-error button {
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--danger-dark);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.officer-announcements-error button:hover {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* =========================================================
+   STATISTICS
+========================================================= */
+
+.officer-announcement-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.officer-announcement-stat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 96px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  transition:
+    transform var(--transition),
+    box-shadow var(--transition),
+    border-color var(--transition);
+}
+
+.officer-announcement-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.officer-stat-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  border-radius: 12px;
+}
+
+.officer-announcement-stat > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.officer-announcement-stat span {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.officer-announcement-stat strong {
+  color: var(--text-primary);
+  font-size: 1.35rem;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.stat-blue {
+  border-top: 2px solid var(--primary);
+}
+
+.stat-blue .officer-stat-icon {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.stat-emerald {
+  border-top: 2px solid var(--success);
+}
+
+.stat-emerald .officer-stat-icon {
+  background: var(--success-light);
+  color: var(--success-dark);
+}
+
+.stat-amber {
+  border-top: 2px solid var(--warning);
+}
+
+.stat-amber .officer-stat-icon {
+  background: var(--warning-light);
+  color: var(--warning-dark);
+}
+
+/* =========================================================
+   TOOLBAR
+========================================================= */
+
+.officer-announcements-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 22px;
+  margin-bottom: 28px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.officer-announcement-search {
+  position: relative;
+  display: flex;
+  min-width: 280px;
+  max-width: 420px;
+  flex: 1;
+  align-items: center;
+}
+
+.officer-announcement-search > svg {
+  position: absolute;
+  left: 14px;
+  color: var(--text-light);
+  pointer-events: none;
+}
+
+.officer-announcement-search input {
+  width: 100%;
+  height: 42px;
+  padding: 0 38px 0 42px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  outline: none;
+  background: var(--background);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  transition:
+    border-color var(--transition),
+    background var(--transition),
+    box-shadow var(--transition);
+}
+
+.officer-announcement-search input::placeholder {
+  color: var(--text-light);
+}
+
+.officer-announcement-search input:focus {
+  border-color: var(--primary);
+  background: var(--surface);
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.officer-search-clear {
+  position: absolute;
+  right: 9px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.officer-search-clear:hover {
+  background: var(--border);
+  color: var(--text-primary);
+}
+
+.officer-announcement-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.officer-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.officer-filter-group > span {
+  color: var(--text-light);
+  font-size: 0.61rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.officer-filter-buttons {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.officer-filter {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-size: 0.64rem;
+  font-weight: 700;
+  transition:
+    border-color var(--transition),
+    background var(--transition),
+    color var(--transition),
+    transform var(--transition);
+}
+
+.officer-filter:hover {
+  transform: translateY(-1px);
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.officer-filter.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--text-white);
+  box-shadow:
+    0 5px 14px rgba(37, 99, 235, 0.18);
+}
+
+/* =========================================================
+   RESULTS HEADER
+========================================================= */
+
+.officer-results-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 15px;
+}
+
+.officer-results-header h2 {
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  line-height: 1.3;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.officer-results-header p {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+}
+
+/* =========================================================
+   ANNOUNCEMENT LIST
+========================================================= */
+
+.officer-announcement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.officer-announcement-card {
+  position: relative;
+  display: flex;
+  gap: 17px;
+  padding: 21px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  transition:
+    transform var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+
+.officer-announcement-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--primary);
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.officer-announcement-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(37, 99, 235, 0.2);
+  box-shadow: var(--shadow-md);
+}
+
+.officer-announcement-card:hover::before {
+  opacity: 1;
+}
+
+.officer-announcement-card.is-draft {
+  border-color: rgba(245, 158, 11, 0.18);
+}
+
+.officer-announcement-card.is-draft::before {
+  background: var(--warning);
+}
+
+.officer-announcement-icon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.announcement-icon-general {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.announcement-icon-important {
+  background: var(--warning-light);
+  color: var(--warning-dark);
+}
+
+.announcement-icon-urgent {
+  background: var(--danger-light);
+  color: var(--danger-dark);
+}
+
+.announcement-icon-event {
+  background: var(--secondary-light);
+  color: var(--secondary);
+}
+
+.announcement-icon-maintenance {
+  background: var(--accent-light);
+  color: var(--accent-dark);
+}
+
+.officer-announcement-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.officer-announcement-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.officer-type-badge,
+.officer-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.59rem;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.officer-type-badge {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.officer-status-badge.published {
+  background: var(--success-light);
+  color: var(--success-dark);
+}
+
+.officer-status-badge.draft {
+  background: var(--warning-light);
+  color: var(--warning-dark);
+}
+
+.officer-announcement-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-light);
+  font-size: 0.61rem;
+  font-weight: 600;
+}
+
+.officer-announcement-main h3 {
+  margin-bottom: 6px;
+  color: var(--text-primary);
+  font-size: 0.84rem;
+  line-height: 1.45;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.officer-announcement-main > p {
+  max-width: 800px;
+  margin-bottom: 13px;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  line-height: 1.7;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.officer-announcement-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.officer-announcement-footer > span {
+  color: var(--text-light);
+  font-size: 0.61rem;
+  font-weight: 600;
+}
+
+.officer-view-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--primary);
+  font-size: 0.66rem;
+  font-weight: 800;
+  transition:
+    gap var(--transition),
+    color var(--transition);
+}
+
+.officer-view-link:hover {
+  gap: 7px;
+  color: var(--primary-dark);
+}
+
+/* =========================================================
+   ACTION BUTTONS
+========================================================= */
+
+.officer-announcement-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.officer-action {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text-muted);
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition),
+    transform var(--transition);
+}
+
+.officer-action:hover {
+  transform: translateY(-1px);
+}
+
+.officer-action.edit:hover {
+  border-color: rgba(37, 99, 235, 0.25);
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.officer-action.delete:hover {
+  border-color: rgba(239, 68, 68, 0.22);
+  background: var(--danger-light);
+  color: var(--danger-dark);
+}
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.officer-announcements-loading {
+  display: flex;
+  min-height: 280px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  text-align: center;
+}
+
+.officer-loading-spinner {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 6px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-right-color: var(--accent);
+  border-radius: 50%;
+  animation: officer-spin 0.8s linear infinite;
+}
+
+.officer-announcements-loading strong {
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.officer-announcements-loading span {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+}
+
+/* =========================================================
+   EMPTY
+========================================================= */
+
+.officer-announcements-empty {
+  display: flex;
+  min-height: 300px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 45px 24px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(37, 99, 235, 0.025),
+      rgba(6, 182, 212, 0.025)
+    ),
+    var(--surface);
+  text-align: center;
+}
+
+.officer-empty-icon {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 15px;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.officer-announcements-empty h3 {
+  margin-bottom: 5px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.officer-announcements-empty p {
+  max-width: 390px;
+  margin-bottom: 18px;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  line-height: 1.7;
+}
+
+/* =========================================================
+   DELETE MODAL
+========================================================= */
+
+.officer-delete-overlay {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(5px);
+}
+
+.officer-delete-modal {
+  position: relative;
+  width: min(100%, 440px);
+  padding: 30px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  box-shadow: var(--shadow-xl);
+}
+
+.officer-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--surface-soft);
+  color: var(--text-muted);
+}
+
+.officer-modal-close:hover {
+  background: var(--border);
+  color: var(--text-primary);
+}
+
+.officer-modal-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.officer-delete-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 17px;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--danger-light);
+  color: var(--danger-dark);
+}
+
+.officer-delete-modal > span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--danger-dark);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.officer-delete-modal h2 {
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  font-size: 1.35rem;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.officer-delete-modal > p {
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  line-height: 1.7;
+}
+
+.officer-delete-modal > p strong {
+  color: var(--text-primary);
+}
+
+.officer-delete-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 24px;
+}
+
+.officer-delete-confirm {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 15px;
+  border-radius: var(--radius-md);
+  background: var(--danger);
+  color: var(--text-white);
+  font-size: 0.72rem;
+  font-weight: 800;
+  transition:
+    background var(--transition),
+    transform var(--transition),
+    box-shadow var(--transition);
+}
+
+.officer-delete-confirm:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: var(--danger-dark);
+  box-shadow:
+    0 8px 18px rgba(239, 68, 68, 0.2);
+}
+
+.officer-delete-confirm:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/* =========================================================
+   RESPONSIVE — 1100px
+========================================================= */
+
+@media (max-width: 1100px) {
+  .officer-announcements-header {
+    align-items: center;
+  }
+
+  .officer-announcements-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .officer-announcement-search {
+    max-width: none;
+  }
+
+  .officer-announcement-filters {
+    justify-content: flex-start;
+  }
+}
+
+/* =========================================================
+   RESPONSIVE — 768px
+========================================================= */
+
+@media (max-width: 768px) {
+  .officer-announcements-page {
+    padding: 32px 0 65px;
+  }
+
+  .officer-page-container {
+    width: min(100% - 32px, 1400px);
+  }
+
+  .officer-announcements-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .officer-announcements-header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .officer-announcement-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .officer-announcement-stat:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .officer-announcement-card {
+    padding: 19px;
+  }
+
+  .officer-announcement-main > p {
+    -webkit-line-clamp: 4;
+  }
+}
+
+/* =========================================================
+   RESPONSIVE — 600px
+========================================================= */
+
+@media (max-width: 600px) {
+  .officer-announcements-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .officer-announcements-header-actions {
+    justify-content: space-between;
+  }
+
+  .officer-refresh-button {
+    flex: 1;
+  }
+
+  .officer-create-button {
+    flex: 1.4;
+  }
+
+  .officer-announcement-stats {
+    gap: 12px;
+  }
+
+  .officer-announcement-stat {
+    min-height: 88px;
+    padding: 16px;
+  }
+
+  .officer-stat-icon {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+
+  .officer-announcement-stat strong {
+    font-size: 1.2rem;
+  }
+
+  .officer-announcement-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .officer-filter-group {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .officer-filter-buttons {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .officer-announcement-card {
+    gap: 13px;
+    padding: 17px;
+  }
+
+  .officer-announcement-icon {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+    border-radius: 11px;
+  }
+
+  .officer-announcement-actions {
+    align-self: flex-start;
+  }
+}
+
+/* =========================================================
+   RESPONSIVE — 480px
+========================================================= */
+
+@media (max-width: 480px) {
+  .officer-announcements-page {
+    padding: 26px 0 55px;
+  }
+
+  .officer-page-container {
+    width: min(100% - 24px, 1400px);
+  }
+
+  .officer-announcements-header-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .officer-refresh-button,
+  .officer-create-button {
+    width: 100%;
+    flex: none;
+  }
+
+  .officer-announcement-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .officer-announcement-stat:last-child {
+    grid-column: auto;
+  }
+
+  .officer-announcements-toolbar {
+    padding: 12px;
+  }
+
+  .officer-announcement-search {
+    min-width: 0;
+  }
+
+  .officer-announcement-card {
+    flex-wrap: wrap;
+  }
+
+  .officer-announcement-main {
+    width: calc(100% - 55px);
+    flex: none;
+  }
+
+  .officer-announcement-actions {
+    width: 100%;
+    padding-top: 4px;
+    border-top: 1px solid var(--border-light);
+  }
+
+  .officer-action {
+    flex: 1;
+    width: auto;
+  }
+
+  .officer-announcement-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .officer-delete-modal {
+    padding: 25px 20px;
+  }
+
+  .officer-delete-actions {
+    flex-direction: column-reverse;
+  }
+
+  .officer-delete-actions button {
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .officer-announcement-card,
+  .officer-announcement-stat,
+  .officer-filter,
+  .officer-action,
+  .officer-refresh-button,
+  .officer-delete-confirm {
+    transition: none;
+  }
+
+  .officer-refreshing,
+  .officer-loading-spinner {
+    animation: none;
+  }
+}
+
+.officer-success-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+  padding: 13px 14px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: var(--radius-md);
+  background: var(--success-light);
+  box-shadow: var(--shadow-xs);
+  animation: officer-success-enter 300ms ease;
+}
+
+.officer-success-icon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  color: var(--success-dark);
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.officer-success-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.officer-success-content strong,
+.officer-success-content span {
+  display: block;
+}
+
+.officer-success-content strong {
+  color: var(--success-dark);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.officer-success-content span {
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.officer-success-close {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  background: transparent;
+  transition:
+    color var(--transition),
+    background var(--transition);
+}
+
+.officer-success-close:hover {
+  color: var(--success-dark);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+@keyframes officer-success-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .officer-success-alert {
+    align-items: flex-start;
+  }
+
+  .officer-success-icon {
+    width: 31px;
+    height: 31px;
+    flex-basis: 31px;
+  }
+
+  .officer-success-content span {
+    font-size: 0.65rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .officer-success-alert {
+    animation: none;
+  }
+}
