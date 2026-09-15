@@ -12,7 +12,6 @@ import Contact from '../pages/public/Contact';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 
-
 import RoleRoute from './RoleRoute';
 
 import StudentLayout from '../layouts/StudentLayout';
@@ -36,6 +35,8 @@ import OfficerFacilities from '../pages/officer/OfficerFacilities';
 import OfficerActivity from '../pages/officer/OfficerActivity';
 import OfficerProfile from '../pages/officer/OfficerProfile';
 import OfficerSettings from '../pages/officer/OfficerSettings';
+
+import AdminDashboard from '../pages/admin/AdminDashboard';
 
 function NotFound() {
   return <h1>Page Not Found</h1>;
@@ -103,7 +104,13 @@ function AppRoutes() {
           PROTECTED STUDENT PORTAL
       ===================================================== */}
 
-      <Route element={<RoleRoute allowedRoles={['student']} />}>
+      <Route
+        element={
+          <RoleRoute
+            allowedRoles={['student']}
+          />
+        }
+      >
 
         <Route element={<StudentLayout />}>
 
@@ -167,52 +174,72 @@ function AppRoutes() {
             element={<OfficerDashboard />}
           />
 
-        <Route
+          <Route
             path="/officer/announcements"
             element={<OfficerAnnouncements />}
           />
 
-        <Route
+          <Route
             path="/officer/announcements/new"
             element={<OfficerAnnouncementForm />}
           />
 
-        <Route
+          <Route
             path="/officer/announcements/:id/edit"
             element={<EditOfficerAnnouncement />}
           />
 
-        <Route
+          <Route
             path="/officer/facilities"
             element={<OfficerFacilities />}
           />
 
-        <Route
+          <Route
             path="/officer/activity"
             element={<OfficerActivity />}
           />
 
-        <Route
+          <Route
             path="/officer/profile"
             element={<OfficerProfile />}
           />
 
-        <Route
+          <Route
             path="/officer/settings"
             element={<OfficerSettings />}
           />
 
-        <Route
-          path="/officer/bookings"
-          element={<OfficerBookings />}
-       />
+          <Route
+            path="/officer/bookings"
+            element={<OfficerBookings />}
+          />
 
-        <Route
-          path="/officer/bookings/:id"
-          element={<OfficerBookingDetails />}
-      />
+          <Route
+            path="/officer/bookings/:id"
+            element={<OfficerBookingDetails />}
+          />
 
         </Route>
+
+      </Route>
+
+
+      {/* =====================================================
+          PROTECTED ADMIN PORTAL
+      ===================================================== */}
+
+      <Route
+        element={
+          <RoleRoute
+            allowedRoles={['admin']}
+          />
+        }
+      >
+
+        <Route
+          path="/admin/dashboard"
+          element={<AdminDashboard />}
+        />
 
       </Route>
 
