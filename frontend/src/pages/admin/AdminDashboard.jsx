@@ -254,7 +254,7 @@ function AdminDashboard() {
       setError('');
 
       const requests = await Promise.allSettled([
-        api.get('/accounts/users/'),
+        api.get('/auth/users/'),
         api.get('/bookings/management/'),
         api.get('/facilities/management/'),
         api.get('/announcements/'),
