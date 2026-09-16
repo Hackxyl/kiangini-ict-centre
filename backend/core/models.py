@@ -1,4 +1,3 @@
-
 from django.conf import settings
 from django.db import models
 
@@ -32,19 +31,19 @@ class Activity(models.Model):
     ACTION_PASSWORD_CHANGED = 'password_changed'
 
     ACTION_CHOICES = [
-      (ACTION_CREATED, 'Created'),
-      (ACTION_UPDATED, 'Updated'),
-      (ACTION_DELETED, 'Deleted'),
-      (ACTION_PUBLISHED, 'Published'),
-      (ACTION_APPROVED, 'Approved'),
-      (ACTION_REJECTED, 'Rejected'),
-      (ACTION_CANCELLED, 'Cancelled'),
-      (ACTION_REGISTERED, 'Registered'),
-      (ACTION_LOGIN, 'Login'),
-      (ACTION_LOGOUT, 'Logout'),
-      (ACTION_PROFILE_UPDATED, 'Profile Updated'),
-      (ACTION_PASSWORD_CHANGED, 'Password Changed'),
-]
+        (ACTION_CREATED, 'Created'),
+        (ACTION_UPDATED, 'Updated'),
+        (ACTION_DELETED, 'Deleted'),
+        (ACTION_PUBLISHED, 'Published'),
+        (ACTION_APPROVED, 'Approved'),
+        (ACTION_REJECTED, 'Rejected'),
+        (ACTION_CANCELLED, 'Cancelled'),
+        (ACTION_REGISTERED, 'Registered'),
+        (ACTION_LOGIN, 'Login'),
+        (ACTION_LOGOUT, 'Logout'),
+        (ACTION_PROFILE_UPDATED, 'Profile Updated'),
+        (ACTION_PASSWORD_CHANGED, 'Password Changed'),
+    ]
 
     activity_type = models.CharField(
         max_length=30,

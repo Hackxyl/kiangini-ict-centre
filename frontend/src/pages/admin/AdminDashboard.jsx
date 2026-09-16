@@ -1,95 +1,251 @@
 import {
+  Activity,
+  AlertTriangle,
+  ArrowUpRight,
+  Bell,
+  Building2,
+  CalendarCheck,
+  CheckCircle2,
+  Clock3,
+  Database,
+  Eye,
+  Gauge,
+  LayoutDashboard,
+  RefreshCw,
+  ShieldCheck,
+  UserCog,
+  Users,
+  UserPlus,
+  Wifi,
+} from 'lucide-react';
+
+import {
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from 'react';
 
-import {
-  Activity,
-  AlertTriangle,
-  BarChart3,
-  Bell,
-  Building2,
-  CalendarCheck,
-  ChevronRight,
-  CircleCheck,
-  Clock3,
-  Database,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  Megaphone,
-  RefreshCw,
-  Settings,
-  ShieldCheck,
-  UserCog,
-  Users,
-  UserRoundPlus,
-  X,
-  XCircle,
-} from 'lucide-react';
-
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 import api from '../../config/api';
 import { useAuth } from '../../context/AuthContext';
 
 import './AdminDashboard.css';
 
+const REFRESH_INTERVAL = 30000;
+
+/*
+ * =========================================================
+ * HELPERS
+ * =========================================================
+ */
+
+function getGreeting() {
+  const hour = new Date().getHours();
+
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+
+  return 'Good evening';
+}
+
+function getDisplayName(user) {
+  if (!user) {
+    return 'Administrator';
+  }
+
+  const fullName =
+    `${user.first_name || ''} ${user.last_name || ''}`.trim();
+
+  return (
+    fullName ||
+    user.name ||
+    user.email ||
+    'Administrator'
+  );
+}
+
+function formatNumber(value) {
+  return new Intl.NumberFormat('en-US').format(
+    value || 0,
+  );
+}
+
+function formatDate(date) {
+  return new Intl.DateTimeFormat('en-KE', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
+}
+
+function formatTime(date) {
+  return new Intl.DateTimeFormat('en-KE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(date);
+}
+
+function formatActivityDate(value) {
+  if (!value) {
+    return 'Recently';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Recently';
+  }
+
+  return `${formatDate(date)} · ${formatTime(date)}`;
+}
+
+function extractResults(data) {
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data?.results)) {
+    return data.results;
+  }
+
+  if (Array.isArray(data?.data)) {
+    return data.data;
+  }
+
+  return [];
+}
+
+function normalizeStatus(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+}
+
+function getActivityIcon(action = '') {
+  const value = action.toLowerCase();
+
+  if (
+    value.includes('user') ||
+    value.includes('student') ||
+    value.includes('officer')
+  ) {
+    return UserCog;
+  }
+
+  if (
+    value.includes('booking') ||
+    value.includes('reservation')
+  ) {
+    return CalendarCheck;
+  }
+
+  if (
+    value.includes('facility') ||
+    value.includes('equipment')
+  ) {
+    return Building2;
+  }
+
+  if (
+    value.includes('announcement') ||
+    value.includes('notification')
+  ) {
+    return Bell;
+  }
+
+  if (
+    value.includes('security') ||
+    value.includes('permission')
+  ) {
+    return ShieldCheck;
+  }
+
+  return Activity;
+}
+
+function getActivityTitle(activity) {
+  return (
+    activity?.title ||
+    activity?.action_display ||
+    activity?.action ||
+    activity?.description ||
+    activity?.message ||
+    'System activity'
+  );
+}
+
+function getActivityUser(activity) {
+  return (
+    activity?.user_name ||
+    activity?.user?.name ||
+    activity?.user?.email ||
+    activity?.performed_by ||
+    'System'
+  );
+}
+
+function getBookingStatus(booking) {
+  return normalizeStatus(
+    booking?.status ||
+      booking?.booking_status ||
+      booking?.state,
+  );
+}
+
+function getFacilityStatus(facility) {
+  return normalizeStatus(
+    facility?.status ||
+      facility?.condition ||
+      facility?.availability ||
+      facility?.state,
+  );
+}
+
+/*
+ * =========================================================
+ * ADMIN DASHBOARD
+ * =========================================================
+ */
 
 function AdminDashboard() {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
-
-  const [mobileMenuOpen, setMobileMenuOpen] =
-    useState(false);
+  const { user } = useAuth();
 
   const [users, setUsers] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [facilities, setFacilities] = useState([]);
-  const [announcements, setAnnouncements] =
-    useState([]);
+  const [announcements, setAnnouncements] = useState([]);
   const [activities, setActivities] = useState([]);
 
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] =
-    useState(false);
-
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
-  const [currentTime, setCurrentTime] =
-    useState(new Date());
+  const [currentTime, setCurrentTime] = useState(
+    new Date(),
+  );
 
+  const [lastUpdated, setLastUpdated] = useState(null);
 
-  /*
-   * =====================================================
-   * LIVE CLOCK
-   * =====================================================
-   */
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
+  const [health, setHealth] = useState({
+    api: 'checking',
+    database: 'checking',
+    authentication: 'checking',
+    application: 'checking',
+  });
 
   /*
-   * =====================================================
-   * LOAD ADMIN DATA
-   * =====================================================
-   *
-   * The dashboard intentionally uses Promise.allSettled()
-   * so one unavailable API does not break the entire
-   * administration dashboard.
+   * =========================================================
+   * LOAD DASHBOARD DATA
+   * =========================================================
    */
 
   const loadDashboard = useCallback(
-    async (refresh = false) => {
-      if (refresh) {
+    async (manualRefresh = false) => {
+      if (manualRefresh) {
         setRefreshing(true);
       } else {
         setLoading(true);
@@ -97,849 +253,717 @@ function AdminDashboard() {
 
       setError('');
 
-      try {
-        const [
-          usersResponse,
-          bookingsResponse,
-          facilitiesResponse,
-          announcementsResponse,
-          activitiesResponse,
-        ] = await Promise.allSettled([
-          api.get('/accounts/users/'),
+      const requests = await Promise.allSettled([
+        api.get('/accounts/users/'),
+        api.get('/bookings/management/'),
+        api.get('/facilities/management/'),
+        api.get('/announcements/'),
 
-          api.get('/bookings/management/'),
+        // Administrator system-wide activity
+        api.get(
+          '/core/admin/activities/?limit=10',
+        ),
 
-          api.get('/facilities/management/'),
+        // Core API health
+        api.get('/core/health/'),
+      ]);
 
-          api.get('/announcements/'),
+      const [
+        usersResponse,
+        bookingsResponse,
+        facilitiesResponse,
+        announcementsResponse,
+        activitiesResponse,
+        healthResponse,
+      ] = requests;
 
-          api.get('/core/activities/?limit=10'),
-        ]);
+      let failedRequests = 0;
 
+      /*
+       * USERS
+       */
 
-        /*
-         * Users
-         */
-
-        if (
-          usersResponse.status ===
-          'fulfilled'
-        ) {
-          const data =
-            usersResponse.value?.data;
-
-          setUsers(
-            Array.isArray(data)
-              ? data
-              : Array.isArray(
-                  data?.results,
-                )
-                ? data.results
-                : [],
-          );
-        }
-
-
-        /*
-         * Bookings
-         */
-
-        if (
-          bookingsResponse.status ===
-          'fulfilled'
-        ) {
-          const data =
-            bookingsResponse.value?.data;
-
-          setBookings(
-            Array.isArray(data)
-              ? data
-              : Array.isArray(
-                  data?.results,
-                )
-                ? data.results
-                : [],
-          );
-        }
-
-
-        /*
-         * Facilities
-         */
-
-        if (
-          facilitiesResponse.status ===
-          'fulfilled'
-        ) {
-          const data =
-            facilitiesResponse.value?.data;
-
-          setFacilities(
-            Array.isArray(data)
-              ? data
-              : Array.isArray(
-                  data?.results,
-                )
-                ? data.results
-                : [],
-          );
-        }
-
-
-        /*
-         * Announcements
-         */
-
-        if (
-          announcementsResponse.status ===
-          'fulfilled'
-        ) {
-          const data =
-            announcementsResponse.value?.data;
-
-          setAnnouncements(
-            Array.isArray(data)
-              ? data
-              : Array.isArray(
-                  data?.results,
-                )
-                ? data.results
-                : [],
-          );
-        }
-
-
-        /*
-         * Activity
-         */
-
-        if (
-          activitiesResponse.status ===
-          'fulfilled'
-        ) {
-          const data =
-            activitiesResponse.value?.data;
-
-          setActivities(
-            Array.isArray(data)
-              ? data
-              : Array.isArray(
-                  data?.results,
-                )
-                ? data.results
-                : [],
-          );
-        }
-
-
-        const responses = [
-          usersResponse,
-          bookingsResponse,
-          facilitiesResponse,
-          announcementsResponse,
-          activitiesResponse,
-        ];
-
-        const failedRequests =
-          responses.filter(
-            (response) =>
-              response.status ===
-              'rejected',
-          );
-
-
-        /*
-         * Only display a full dashboard
-         * error if every API failed.
-         */
-
-        if (
-          failedRequests.length ===
-          responses.length
-        ) {
-          throw new Error(
-            'Unable to load administration data.',
-          );
-        }
-
-        if (
-          failedRequests.length > 0
-        ) {
-          console.warn(
-            'Some administration dashboard requests failed.',
-            failedRequests,
-          );
-        }
-      } catch (requestError) {
-        console.error(
-          'Unable to load admin dashboard:',
-          requestError,
+      if (usersResponse.status === 'fulfilled') {
+        setUsers(
+          extractResults(
+            usersResponse.value.data,
+          ),
         );
-
-        setError(
-          'Unable to load dashboard data. Please try again.',
-        );
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
+      } else {
+        failedRequests += 1;
       }
+
+      /*
+       * BOOKINGS
+       */
+
+      if (bookingsResponse.status === 'fulfilled') {
+        setBookings(
+          extractResults(
+            bookingsResponse.value.data,
+          ),
+        );
+      } else {
+        failedRequests += 1;
+      }
+
+      /*
+       * FACILITIES
+       */
+
+      if (facilitiesResponse.status === 'fulfilled') {
+        setFacilities(
+          extractResults(
+            facilitiesResponse.value.data,
+          ),
+        );
+      } else {
+        failedRequests += 1;
+      }
+
+      /*
+       * ANNOUNCEMENTS
+       */
+
+      if (
+        announcementsResponse.status ===
+        'fulfilled'
+      ) {
+        setAnnouncements(
+          extractResults(
+            announcementsResponse.value.data,
+          ),
+        );
+      } else {
+        failedRequests += 1;
+      }
+
+      /*
+       * SYSTEM ACTIVITY
+       */
+
+      if (
+        activitiesResponse.status ===
+        'fulfilled'
+      ) {
+        setActivities(
+          extractResults(
+            activitiesResponse.value.data,
+          ),
+        );
+      } else {
+        failedRequests += 1;
+      }
+
+      /*
+       * HEALTH
+       *
+       * Supports both:
+       *
+       * "healthy"
+       *
+       * and the current endpoint:
+       *
+       * "ok"
+       */
+
+      if (
+        healthResponse.status ===
+        'fulfilled'
+      ) {
+        const healthData =
+          healthResponse.value.data || {};
+
+        const apiHealthy =
+          healthData.api === 'healthy' ||
+          healthData.api === 'ok' ||
+          healthData.status === 'healthy' ||
+          healthData.status === 'ok';
+
+        const databaseHealthy =
+          healthData.database === 'healthy' ||
+          healthData.database === 'ok';
+
+        const authenticationHealthy =
+          healthData.authentication ===
+            'healthy' ||
+          healthData.authentication === 'ok';
+
+        const applicationHealthy =
+          healthData.application ===
+            'healthy' ||
+          healthData.application === 'ok' ||
+          healthData.status === 'healthy' ||
+          healthData.status === 'ok';
+
+        setHealth({
+          api: apiHealthy
+            ? 'healthy'
+            : 'warning',
+
+          database: databaseHealthy
+            ? 'healthy'
+            : 'warning',
+
+          authentication:
+            authenticationHealthy
+              ? 'healthy'
+              : 'warning',
+
+          application:
+            applicationHealthy
+              ? 'healthy'
+              : 'warning',
+        });
+      } else {
+        /*
+         * The API itself responded to the other
+         * requests, therefore the API is reachable
+         * even if /core/health/ is unavailable.
+         */
+
+        const apiReachable =
+          usersResponse.status ===
+            'fulfilled' ||
+          bookingsResponse.status ===
+            'fulfilled' ||
+          facilitiesResponse.status ===
+            'fulfilled';
+
+        setHealth((previous) => ({
+          ...previous,
+
+          api: apiReachable
+            ? 'healthy'
+            : 'offline',
+
+          application: 'warning',
+
+          database: 'unknown',
+
+          authentication: 'unknown',
+        }));
+      }
+
+      if (failedRequests > 0) {
+        setError(
+          `${failedRequests} dashboard service${
+            failedRequests === 1
+              ? ''
+              : 's'
+          } could not be loaded.`,
+        );
+      }
+
+      setLastUpdated(new Date());
+      setLoading(false);
+      setRefreshing(false);
     },
     [],
   );
 
+  /*
+   * =========================================================
+   * INITIAL LOAD + AUTOMATIC REFRESH
+   * =========================================================
+   */
 
   useEffect(() => {
     loadDashboard();
+
+    const interval =
+      window.setInterval(() => {
+        loadDashboard(true);
+      }, REFRESH_INTERVAL);
+
+    return () => {
+      window.clearInterval(interval);
+    };
   }, [loadDashboard]);
 
-
   /*
-   * =====================================================
-   * USER STATISTICS
-   * =====================================================
+   * =========================================================
+   * LIVE CLOCK
+   * =========================================================
    */
 
-  const studentUsers = useMemo(
-    () =>
-      users.filter(
-        (item) =>
-          item.role ===
-          'student',
-      ),
-    [users],
-  );
+  useEffect(() => {
+    const timer =
+      window.setInterval(() => {
+        setCurrentTime(new Date());
+      }, 1000);
 
-  const officerUsers = useMemo(
-    () =>
-      users.filter(
-        (item) =>
-          item.role ===
-          'officer',
-      ),
-    [users],
-  );
-
-  const adminUsers = useMemo(
-    () =>
-      users.filter(
-        (item) =>
-          item.role ===
-          'admin',
-      ),
-    [users],
-  );
-
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, []);
 
   /*
-   * =====================================================
-   * BOOKING STATISTICS
-   * =====================================================
+   * =========================================================
+   * USER ANALYTICS
+   * =========================================================
    */
 
-  const pendingBookings = useMemo(
-    () =>
-      bookings.filter(
-        (booking) =>
-          booking.status ===
-          'pending',
-      ),
-    [bookings],
-  );
+  const userStats = useMemo(() => {
+    const students = users.filter(
+      (item) =>
+        normalizeStatus(item.role) ===
+        'student',
+    ).length;
 
-  const approvedBookings = useMemo(
-    () =>
-      bookings.filter(
-        (booking) =>
-          booking.status ===
-          'approved',
-      ),
-    [bookings],
-  );
+    const officers = users.filter(
+      (item) =>
+        normalizeStatus(item.role) ===
+        'officer',
+    ).length;
 
-  const rejectedBookings = useMemo(
-    () =>
-      bookings.filter(
-        (booking) =>
-          booking.status ===
-          'rejected',
-      ),
-    [bookings],
-  );
+    const admins = users.filter(
+      (item) =>
+        normalizeStatus(item.role) ===
+        'admin',
+    ).length;
 
-  const cancelledBookings = useMemo(
-    () =>
-      bookings.filter(
-        (booking) =>
-          booking.status ===
-          'cancelled',
-      ),
-    [bookings],
-  );
+    const active = users.filter(
+      (item) => item.is_active !== false,
+    ).length;
 
+    return {
+      total: users.length,
+      students,
+      officers,
+      admins,
+      active,
+    };
+  }, [users]);
 
   /*
-   * =====================================================
-   * FACILITY STATISTICS
-   * =====================================================
+   * =========================================================
+   * BOOKING ANALYTICS
+   * =========================================================
    */
 
-  const availableFacilities =
-    useMemo(
-      () =>
-        facilities.filter(
-          (facility) =>
-            facility.status ===
-              'available' &&
-            facility.is_bookable !==
-              false,
-        ),
-      [facilities],
+  const bookingStats = useMemo(() => {
+    const statuses = bookings.map(
+      getBookingStatus,
     );
 
-  const maintenanceFacilities =
-    useMemo(
-      () =>
-        facilities.filter(
-          (facility) =>
-            facility.status ===
-            'maintenance',
-        ),
-      [facilities],
-    );
+    const count = (values) =>
+      statuses.filter((status) =>
+        values.includes(status),
+      ).length;
 
-  const inactiveFacilities =
-    useMemo(
-      () =>
-        facilities.filter(
-          (facility) =>
-            facility.status ===
-            'inactive',
-        ),
-      [facilities],
-    );
+    return {
+      total: bookings.length,
 
+      pending: count([
+        'pending',
+        'requested',
+        'submitted',
+      ]),
+
+      approved: count([
+        'approved',
+        'confirmed',
+        'accepted',
+      ]),
+
+      rejected: count([
+        'rejected',
+        'declined',
+      ]),
+
+      cancelled: count([
+        'cancelled',
+        'canceled',
+      ]),
+    };
+  }, [bookings]);
+
+  const approvalPercentage = useMemo(() => {
+    if (!bookingStats.total) {
+      return 0;
+    }
+
+    return Math.round(
+      (bookingStats.approved /
+        bookingStats.total) *
+        100,
+    );
+  }, [bookingStats]);
 
   /*
-   * =====================================================
+   * =========================================================
+   * FACILITY ANALYTICS
+   * =========================================================
+   */
+
+  const facilityStats = useMemo(() => {
+    const availableStatuses = [
+      'available',
+      'active',
+      'operational',
+      'working',
+    ];
+
+    const maintenanceStatuses = [
+      'maintenance',
+      'under_maintenance',
+      'repair',
+    ];
+
+    const inactiveStatuses = [
+      'inactive',
+      'unavailable',
+      'disabled',
+      'offline',
+    ];
+
+    const available =
+      facilities.filter((facility) =>
+        availableStatuses.includes(
+          getFacilityStatus(facility),
+        ),
+      ).length;
+
+    const maintenance =
+      facilities.filter((facility) =>
+        maintenanceStatuses.some((status) =>
+          getFacilityStatus(
+            facility,
+          ).includes(status),
+        ),
+      ).length;
+
+    const inactive =
+      facilities.filter((facility) =>
+        inactiveStatuses.includes(
+          getFacilityStatus(facility),
+        ),
+      ).length;
+
+    return {
+      total: facilities.length,
+      available,
+      maintenance,
+      inactive,
+    };
+  }, [facilities]);
+
+  const facilityOperationalPercentage =
+    useMemo(() => {
+      if (!facilityStats.total) {
+        return 0;
+      }
+
+      return Math.round(
+        (facilityStats.available /
+          facilityStats.total) *
+          100,
+      );
+    }, [facilityStats]);
+
+  /*
+   * =========================================================
+   * USER DISTRIBUTION
+   * =========================================================
+   */
+
+  const roleDistribution = useMemo(() => {
+    const total = userStats.total;
+
+    if (!total) {
+      return [
+        {
+          label: 'Students',
+          value: 0,
+          percentage: 0,
+          className: 'student',
+        },
+        {
+          label: 'ICT Officers',
+          value: 0,
+          percentage: 0,
+          className: 'officer',
+        },
+        {
+          label: 'Administrators',
+          value: 0,
+          percentage: 0,
+          className: 'admin',
+        },
+      ];
+    }
+
+    return [
+      {
+        label: 'Students',
+        value: userStats.students,
+        percentage: Math.round(
+          (userStats.students / total) *
+            100,
+        ),
+        className: 'student',
+      },
+      {
+        label: 'ICT Officers',
+        value: userStats.officers,
+        percentage: Math.round(
+          (userStats.officers / total) *
+            100,
+        ),
+        className: 'officer',
+      },
+      {
+        label: 'Administrators',
+        value: userStats.admins,
+        percentage: Math.round(
+          (userStats.admins / total) *
+            100,
+        ),
+        className: 'admin',
+      },
+    ];
+  }, [userStats]);
+
+  /*
+   * =========================================================
+   * BOOKING DISTRIBUTION
+   * =========================================================
+   */
+
+  const bookingDistribution = useMemo(() => {
+    const total = bookingStats.total;
+
+    if (!total) {
+      return [
+        {
+          label: 'Approved',
+          value: 0,
+          percentage: 0,
+          className: 'approved',
+        },
+        {
+          label: 'Pending',
+          value: 0,
+          percentage: 0,
+          className: 'pending',
+        },
+        {
+          label: 'Rejected',
+          value: 0,
+          percentage: 0,
+          className: 'rejected',
+        },
+        {
+          label: 'Cancelled',
+          value: 0,
+          percentage: 0,
+          className: 'cancelled',
+        },
+      ];
+    }
+
+    return [
+      {
+        label: 'Approved',
+        value: bookingStats.approved,
+        percentage: Math.round(
+          (bookingStats.approved / total) *
+            100,
+        ),
+        className: 'approved',
+      },
+      {
+        label: 'Pending',
+        value: bookingStats.pending,
+        percentage: Math.round(
+          (bookingStats.pending / total) *
+            100,
+        ),
+        className: 'pending',
+      },
+      {
+        label: 'Rejected',
+        value: bookingStats.rejected,
+        percentage: Math.round(
+          (bookingStats.rejected / total) *
+            100,
+        ),
+        className: 'rejected',
+      },
+      {
+        label: 'Cancelled',
+        value: bookingStats.cancelled,
+        percentage: Math.round(
+          (bookingStats.cancelled / total) *
+            100,
+        ),
+        className: 'cancelled',
+      },
+    ];
+  }, [bookingStats]);
+
+  /*
+   * =========================================================
+   * ADMIN ACTION QUEUE
+   * =========================================================
+   */
+
+  const pendingActions = useMemo(
+    () => [
+      {
+        label: 'Pending booking requests',
+        value: bookingStats.pending,
+        icon: Clock3,
+        className: 'warning',
+        path: '/admin/bookings',
+      },
+      {
+        label: 'Facilities under maintenance',
+        value: facilityStats.maintenance,
+        icon: Building2,
+        className: 'danger',
+        path: '/admin/facilities',
+      },
+      {
+        label: 'Published announcements',
+        value: announcements.length,
+        icon: Bell,
+        className: 'info',
+        path: '/admin/announcements',
+      },
+    ],
+    [
+      bookingStats.pending,
+      facilityStats.maintenance,
+      announcements.length,
+    ],
+  );
+
+  /*
+   * =========================================================
    * SYSTEM HEALTH
-   * =====================================================
+   * =========================================================
    */
 
-  const successfulSystems = [
-    users.length > 0 ||
-      !loading,
-    bookings.length > 0 ||
-      !loading,
-    facilities.length > 0 ||
-      !loading,
-    announcements.length > 0 ||
-      !loading,
-  ].filter(Boolean).length;
-
-
-  /*
-   * =====================================================
-   * GREETING
-   * =====================================================
-   */
-
-  const getGreeting = (date) => {
-    const hour = date.getHours();
-
-    if (hour < 5) {
-      return 'Good night';
-    }
-
-    if (hour < 12) {
-      return 'Good morning';
-    }
-
-    if (hour < 17) {
-      return 'Good afternoon';
-    }
-
-    return 'Good evening';
-  };
-
-
-  const formattedDate =
-    currentTime.toLocaleDateString(
-      undefined,
+  const healthItems = useMemo(
+    () => [
       {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
+        label: 'API Service',
+        detail: 'Django REST API',
+        icon: Wifi,
+        status: health.api,
       },
-    );
-
-
-  const formattedTime =
-    currentTime.toLocaleTimeString(
-      undefined,
       {
-        hour: 'numeric',
-        minute: '2-digit',
-        second: '2-digit',
+        label: 'Database',
+        detail: 'PostgreSQL',
+        icon: Database,
+        status: health.database,
       },
-    );
-
-
-  /*
-   * =====================================================
-   * ACTIVITY DATE
-   * =====================================================
-   */
-
-  const formatActivityDate = (
-    date,
-  ) => {
-    if (!date) {
-      return '';
-    }
-
-    const parsedDate =
-      new Date(date);
-
-    if (
-      Number.isNaN(
-        parsedDate.getTime(),
-      )
-    ) {
-      return date;
-    }
-
-    return parsedDate.toLocaleDateString(
-      undefined,
       {
-        day: 'numeric',
-        month: 'short',
+        label: 'Authentication',
+        detail: 'JWT Security',
+        icon: ShieldCheck,
+        status: health.authentication,
       },
-    );
-  };
+      {
+        label: 'Application',
+        detail: 'Kiangini ICT Centre',
+        icon: Gauge,
+        status: health.application,
+      },
+    ],
+    [health],
+  );
 
+  function getHealthLabel(status) {
+    switch (status) {
+      case 'healthy':
+        return 'Operational';
 
-  /*
-   * =====================================================
-   * ACTIVITY ICON
-   * =====================================================
-   */
+      case 'warning':
+        return 'Attention';
 
-  const getActivityIcon = (
-    activity,
-  ) => {
-    switch (activity.type) {
-      case 'booking':
-        return CalendarCheck;
+      case 'offline':
+        return 'Offline';
 
-      case 'facility':
-        return Building2;
-
-      case 'announcement':
-        return Megaphone;
-
-      case 'user':
-        return Users;
+      case 'unknown':
+        return 'Unknown';
 
       default:
-        return Activity;
+        return 'Checking';
     }
-  };
+  }
 
+  function getHealthClass(status) {
+    switch (status) {
+      case 'healthy':
+        return 'healthy';
 
-  /*
-   * =====================================================
-   * LOGOUT
-   * =====================================================
-   */
+      case 'offline':
+        return 'danger';
 
-  const handleLogout = async () => {
-    setMobileMenuOpen(false);
+      case 'warning':
+        return 'warning';
 
-    try {
-      await logout();
-    } finally {
-      navigate('/login');
+      default:
+        return 'checking';
     }
-  };
-
-
-  /*
-   * =====================================================
-   * CLOSE MOBILE MENU
-   * =====================================================
-   */
-
-  const closeMobileMenu = () => {
-    setMobileMenuOpen(false);
-  };
-
+  }
 
   return (
-    <div className="admin-dashboard">
+    <section className="admin-dashboard">
+      <div className="admin-dashboard-container">
 
-      {/* =================================================
-          MOBILE OVERLAY
-      ================================================= */}
+        {/* =====================================================
+            COMMAND HEADER
+        ====================================================== */}
 
-      {mobileMenuOpen && (
-        <button
-          type="button"
-          className="admin-mobile-overlay"
-          aria-label="Close administration menu"
-          onClick={closeMobileMenu}
-        />
-      )}
+        <header className="admin-command-header">
 
+          <div className="admin-command-heading">
 
-      {/* =================================================
-          SIDEBAR
-      ================================================= */}
+            <div className="admin-command-eyebrow">
+              <span className="admin-command-dot" />
+              ADMIN CONTROL CENTER
+            </div>
 
-      <aside
-        className={`admin-sidebar ${
-          mobileMenuOpen
-            ? 'is-open'
-            : ''
-        }`}
-      >
+            <h1>
+              {getGreeting()},{' '}
+              <span>
+                {getDisplayName(user)}
+              </span>
+            </h1>
 
-        <div className="admin-sidebar-top">
-
-          <Link
-            to="/"
-            className="admin-brand"
-            onClick={closeMobileMenu}
-          >
-            <span className="admin-brand-mark">
-              K
-            </span>
-
-            <span className="admin-brand-text">
-              <strong>
-                Kiangini
-              </strong>
-
-              <small>
-                Administration
-              </small>
-            </span>
-          </Link>
-
-
-          <button
-            type="button"
-            className="admin-sidebar-close"
-            onClick={closeMobileMenu}
-            aria-label="Close menu"
-          >
-            <X size={19} />
-          </button>
-
-
-          <div className="admin-sidebar-section">
-
-            <span className="admin-sidebar-label">
-              Administration
-            </span>
-
-            <nav className="admin-nav">
-
-              <Link
-                to="/admin/dashboard"
-                className="admin-nav-item active"
-                onClick={closeMobileMenu}
-              >
-                <LayoutDashboard
-                  size={18}
-                />
-
-                <span>
-                  Dashboard
-                </span>
-              </Link>
-
-
-              <Link
-                to="/admin/users"
-                className="admin-nav-item"
-                onClick={closeMobileMenu}
-              >
-                <Users size={18} />
-
-                <span>
-                  User Management
-                </span>
-              </Link>
-
-
-              <Link
-                to="/admin/bookings"
-                className="admin-nav-item"
-                onClick={closeMobileMenu}
-              >
-                <CalendarCheck
-                  size={18}
-                />
-
-                <span>
-                  Bookings
-                </span>
-              </Link>
-
-
-              <Link
-                to="/admin/facilities"
-                className="admin-nav-item"
-                onClick={closeMobileMenu}
-              >
-                <Building2
-                  size={18}
-                />
-
-                <span>
-                  Facilities
-                </span>
-              </Link>
-
-
-              <Link
-                to="/admin/announcements"
-                className="admin-nav-item"
-                onClick={closeMobileMenu}
-              >
-                <Megaphone
-                  size={18}
-                />
-
-                <span>
-                  Announcements
-                </span>
-              </Link>
-
-            </nav>
+            <p>
+              Monitor and control the entire
+              Kiangini ICT Centre platform from
+              one live administrative workspace.
+            </p>
 
           </div>
 
+          <div className="admin-command-actions">
 
-          <div className="admin-sidebar-section">
+            <div className="admin-command-date">
 
-            <span className="admin-sidebar-label">
-              System
-            </span>
-
-            <nav className="admin-nav">
-
-              <Link
-                to="/admin/activity"
-                className="admin-nav-item"
-                onClick={closeMobileMenu}
-              >
-                <Activity size={18} />
-
-                <span>
-                  Activity Log
-                </span>
-              </Link>
-
-
-              <Link
-                to="/admin/settings"
-                className="admin-nav-item"
-                onClick={closeMobileMenu}
-              >
-                <Settings size={18} />
-
-                <span>
-                  System Settings
-                </span>
-              </Link>
-
-            </nav>
-
-          </div>
-
-        </div>
-
-
-        <div className="admin-sidebar-bottom">
-
-          <div className="admin-sidebar-security">
-            <ShieldCheck
-              size={17}
-            />
-
-            <div>
               <strong>
-                Administrator
+                {formatDate(currentTime)}
               </strong>
 
               <span>
-                Privileged access
-              </span>
-            </div>
-          </div>
-
-
-          <button
-            type="button"
-            className="admin-logout"
-            onClick={handleLogout}
-          >
-            <LogOut size={17} />
-
-            <span>
-              Sign out
-            </span>
-          </button>
-
-        </div>
-
-      </aside>
-
-
-      {/* =================================================
-          MAIN
-      ================================================= */}
-
-      <main className="admin-main">
-
-        {/* Top bar */}
-
-        <header className="admin-topbar">
-
-          <div className="admin-topbar-left">
-
-            <button
-              type="button"
-              className="admin-menu-button"
-              onClick={() =>
-                setMobileMenuOpen(
-                  true,
-                )
-              }
-              aria-label="Open administration menu"
-            >
-              <Menu size={21} />
-            </button>
-
-            <div>
-              <span className="admin-topbar-label">
-                Administration
+                {formatTime(currentTime)}
+                {' · '}
+                Africa/Nairobi
               </span>
 
-              <strong>
-                Control Centre
-              </strong>
-            </div>
-
-          </div>
-
-
-          <div className="admin-topbar-right">
-
-            <div className="admin-system-status">
-              <span className="admin-status-dot" />
-
-              <span>
-                System operational
-              </span>
-            </div>
-
-
-            <button
-              type="button"
-              className="admin-notification-button"
-              aria-label="Notifications"
-            >
-              <Bell size={19} />
-
-              {pendingBookings.length >
-                0 && (
-                <span className="admin-notification-badge">
-                  {pendingBookings.length >
-                  9
-                    ? '9+'
-                    : pendingBookings.length}
-                </span>
+              {lastUpdated && (
+                <small>
+                  Updated {formatTime(lastUpdated)}
+                </small>
               )}
-            </button>
-
-
-            <div className="admin-user-chip">
-
-              <div className="admin-user-avatar">
-                {(user?.first_name ||
-                  user?.email ||
-                  'A')
-                  .charAt(0)
-                  .toUpperCase()}
-              </div>
-
-              <div>
-                <strong>
-                  {user?.first_name ||
-                    'Administrator'}
-                </strong>
-
-                <span>
-                  System Admin
-                </span>
-              </div>
 
             </div>
-
-          </div>
-
-        </header>
-
-
-        <div className="admin-dashboard-container">
-
-          {/* =================================================
-              PAGE HEADER
-          ================================================= */}
-
-          <section className="admin-page-header">
-
-            <div>
-
-              <span className="admin-eyebrow">
-                System Administration
-              </span>
-
-              <h1>
-                {getGreeting(
-                  currentTime,
-                )}
-                , Administrator.
-              </h1>
-
-              <div className="admin-live-time">
-                <Clock3 size={14} />
-
-                <span>
-                  {formattedDate}
-                </span>
-
-                <span>
-                  ·
-                </span>
-
-                <strong>
-                  {formattedTime}
-                </strong>
-              </div>
-
-              <p>
-                Manage users, facilities,
-                bookings, announcements and
-                platform operations from one
-                central administration centre.
-              </p>
-
-            </div>
-
 
             <button
               type="button"
@@ -947,949 +971,798 @@ function AdminDashboard() {
               onClick={() =>
                 loadDashboard(true)
               }
-              disabled={
-                loading ||
-                refreshing
-              }
+              disabled={refreshing}
             >
               <RefreshCw
                 size={17}
                 className={
                   refreshing
-                    ? 'admin-refresh-spin'
+                    ? 'admin-refresh-spinning'
                     : ''
                 }
               />
 
-              {refreshing
-                ? 'Refreshing...'
-                : 'Refresh'}
+              <span>
+                {refreshing
+                  ? 'Updating'
+                  : 'Refresh'}
+              </span>
             </button>
 
-          </section>
+          </div>
 
+        </header>
 
-          {/* =================================================
-              ERROR
-          ================================================= */}
+        {/* =====================================================
+            ERROR
+        ====================================================== */}
 
-          {error && (
-            <div className="admin-dashboard-error">
+        {error && (
+          <div className="admin-dashboard-alert warning">
 
-              <XCircle size={19} />
+            <AlertTriangle size={18} />
 
-              <span>
-                {error}
+            <div>
+              <strong>
+                Partial dashboard update
+              </strong>
+
+              <span>{error}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                loadDashboard(true)
+              }
+            >
+              Retry
+            </button>
+
+          </div>
+        )}
+
+        {/* =====================================================
+            SYSTEM HEALTH
+        ====================================================== */}
+
+        <section className="admin-system-status">
+
+          <div className="admin-section-heading compact">
+
+            <div>
+              <span className="admin-section-kicker">
+                SYSTEM STATUS
               </span>
 
-              <button
-                type="button"
-                onClick={() =>
-                  loadDashboard(true)
-                }
-              >
-                Try again
-              </button>
-
-            </div>
-          )}
-
-
-          {/* =================================================
-              PRIMARY STATISTICS
-          ================================================= */}
-
-          <section className="admin-stat-grid">
-
-            <div className="admin-stat-card blue">
-
-              <div className="admin-stat-icon">
-                <Users size={21} />
-              </div>
-
-              <div className="admin-stat-content">
-                <span>
-                  Total Users
-                </span>
-
-                <strong>
-                  {loading
-                    ? '—'
-                    : users.length}
-                </strong>
-
-                <small>
-                  All registered accounts
-                </small>
-              </div>
-
-              <Link
-                to="/admin/users"
-                className="admin-stat-arrow"
-              >
-                <ChevronRight
-                  size={17}
-                />
-              </Link>
-
+              <h2>
+                Live platform health
+              </h2>
             </div>
 
+            <span className="admin-live-status">
+              <span />
+              Auto-updating
+            </span>
 
-            <div className="admin-stat-card indigo">
+          </div>
 
-              <div className="admin-stat-icon">
-                <CalendarCheck
-                  size={21}
-                />
-              </div>
+          <div className="admin-health-grid">
 
-              <div className="admin-stat-content">
-                <span>
-                  Total Bookings
-                </span>
+            {healthItems.map((service) => {
+              const Icon = service.icon;
 
-                <strong>
-                  {loading
-                    ? '—'
-                    : bookings.length}
-                </strong>
-
-                <small>
-                  Platform booking requests
-                </small>
-              </div>
-
-              <Link
-                to="/admin/bookings"
-                className="admin-stat-arrow"
-              >
-                <ChevronRight
-                  size={17}
-                />
-              </Link>
-
-            </div>
-
-
-            <div className="admin-stat-card cyan">
-
-              <div className="admin-stat-icon">
-                <Building2 size={21} />
-              </div>
-
-              <div className="admin-stat-content">
-                <span>
-                  Facilities
-                </span>
-
-                <strong>
-                  {loading
-                    ? '—'
-                    : facilities.length}
-                </strong>
-
-                <small>
-                  ICT Centre facilities
-                </small>
-              </div>
-
-              <Link
-                to="/admin/facilities"
-                className="admin-stat-arrow"
-              >
-                <ChevronRight
-                  size={17}
-                />
-              </Link>
-
-            </div>
-
-
-            <div className="admin-stat-card violet">
-
-              <div className="admin-stat-icon">
-                <Megaphone
-                  size={21}
-                />
-              </div>
-
-              <div className="admin-stat-content">
-                <span>
-                  Announcements
-                </span>
-
-                <strong>
-                  {loading
-                    ? '—'
-                    : announcements.length}
-                </strong>
-
-                <small>
-                  Published platform updates
-                </small>
-              </div>
-
-              <Link
-                to="/admin/announcements"
-                className="admin-stat-arrow"
-              >
-                <ChevronRight
-                  size={17}
-                />
-              </Link>
-
-            </div>
-
-          </section>
-
-
-          {/* =================================================
-              USER / BOOKING SNAPSHOT
-          ================================================= */}
-
-          <section className="admin-overview-grid">
-
-            {/* User overview */}
-
-            <div className="admin-panel">
-
-              <div className="admin-panel-header">
-
-                <div>
-                  <span className="admin-eyebrow">
-                    Accounts
-                  </span>
-
-                  <h2>
-                    User Overview
-                  </h2>
-
-                  <p>
-                    Distribution of registered
-                    platform accounts.
-                  </p>
-                </div>
-
-                <Link
-                  to="/admin/users"
-                  className="admin-panel-link"
+              return (
+                <div
+                  className="admin-health-card"
+                  key={service.label}
                 >
-                  Manage users
-                  <ChevronRight size={15} />
-                </Link>
 
-              </div>
-
-
-              <div className="admin-user-overview">
-
-                <div className="admin-user-total">
-
-                  <div className="admin-user-total-icon">
-                    <Users size={21} />
+                  <div
+                    className={`admin-health-icon ${getHealthClass(
+                      service.status,
+                    )}`}
+                  >
+                    <Icon size={19} />
                   </div>
 
-                  <div>
-                    <span>
-                      Registered users
-                    </span>
+                  <div className="admin-health-content">
 
                     <strong>
-                      {loading
-                        ? '—'
-                        : users.length}
+                      {service.label}
                     </strong>
+
+                    <span>
+                      {service.detail}
+                    </span>
+
+                  </div>
+
+                  <div
+                    className={`admin-health-status ${getHealthClass(
+                      service.status,
+                    )}`}
+                  >
+                    <span />
+
+                    {getHealthLabel(
+                      service.status,
+                    )}
                   </div>
 
                 </div>
+              );
+            })}
 
+          </div>
 
-                <div className="admin-role-list">
+        </section>
 
-                  <div className="admin-role-item">
+        {/* =====================================================
+            LIVE METRICS
+        ====================================================== */}
 
-                    <span className="admin-role-icon student">
-                      <Users size={15} />
-                    </span>
+        <section className="admin-metrics-grid">
 
-                    <span>
-                      Students
-                    </span>
+          <article className="admin-metric-card users-card">
 
-                    <strong>
-                      {loading
-                        ? '—'
-                        : studentUsers.length}
-                    </strong>
+            <div className="admin-metric-top">
 
-                  </div>
-
-
-                  <div className="admin-role-item">
-
-                    <span className="admin-role-icon officer">
-                      <UserCog size={15} />
-                    </span>
-
-                    <span>
-                      Officers
-                    </span>
-
-                    <strong>
-                      {loading
-                        ? '—'
-                        : officerUsers.length}
-                    </strong>
-
-                  </div>
-
-
-                  <div className="admin-role-item">
-
-                    <span className="admin-role-icon admin">
-                      <ShieldCheck
-                        size={15}
-                      />
-                    </span>
-
-                    <span>
-                      Administrators
-                    </span>
-
-                    <strong>
-                      {loading
-                        ? '—'
-                        : adminUsers.length}
-                    </strong>
-
-                  </div>
-
-                </div>
-
+              <div className="admin-metric-icon">
+                <Users size={20} />
               </div>
+
+              <span className="admin-metric-badge positive">
+                <CheckCircle2 size={13} />
+                {formatNumber(
+                  userStats.active,
+                )}{' '}
+                active
+              </span>
 
             </div>
 
+            <div className="admin-metric-value">
+              {loading
+                ? '—'
+                : formatNumber(
+                    userStats.total,
+                  )}
+            </div>
 
-            {/* Booking overview */}
+            <div className="admin-metric-label">
+              Total users
+            </div>
 
-            <div className="admin-panel">
+            <div className="admin-metric-footer">
 
-              <div className="admin-panel-header">
+              <span>
+                {formatNumber(
+                  userStats.students,
+                )}{' '}
+                students
+              </span>
 
-                <div>
-                  <span className="admin-eyebrow">
-                    Operations
-                  </span>
-
-                  <h2>
-                    Booking Overview
-                  </h2>
-
-                  <p>
-                    Current platform booking
-                    distribution.
-                  </p>
-                </div>
-
-                <Link
-                  to="/admin/bookings"
-                  className="admin-panel-link"
-                >
-                  View bookings
-                  <ChevronRight size={15} />
-                </Link>
-
-              </div>
-
-
-              <div className="admin-booking-overview">
-
-                <div className="admin-booking-row">
-
-                  <div>
-                    <span className="admin-booking-status pending">
-                      <Clock3 size={14} />
-                    </span>
-
-                    <span>
-                      Pending
-                    </span>
-                  </div>
-
-                  <strong>
-                    {loading
-                      ? '—'
-                      : pendingBookings.length}
-                  </strong>
-
-                </div>
-
-
-                <div className="admin-booking-row">
-
-                  <div>
-                    <span className="admin-booking-status approved">
-                      <CircleCheck
-                        size={14}
-                      />
-                    </span>
-
-                    <span>
-                      Approved
-                    </span>
-                  </div>
-
-                  <strong>
-                    {loading
-                      ? '—'
-                      : approvedBookings.length}
-                  </strong>
-
-                </div>
-
-
-                <div className="admin-booking-row">
-
-                  <div>
-                    <span className="admin-booking-status rejected">
-                      <XCircle size={14} />
-                    </span>
-
-                    <span>
-                      Rejected
-                    </span>
-                  </div>
-
-                  <strong>
-                    {loading
-                      ? '—'
-                      : rejectedBookings.length}
-                  </strong>
-
-                </div>
-
-
-                <div className="admin-booking-row">
-
-                  <div>
-                    <span className="admin-booking-status cancelled">
-                      <AlertTriangle
-                        size={14}
-                      />
-                    </span>
-
-                    <span>
-                      Cancelled
-                    </span>
-                  </div>
-
-                  <strong>
-                    {loading
-                      ? '—'
-                      : cancelledBookings.length}
-                  </strong>
-
-                </div>
-
-              </div>
+              <span>
+                {formatNumber(
+                  userStats.officers,
+                )}{' '}
+                officers
+              </span>
 
             </div>
 
-          </section>
+          </article>
 
+          <article className="admin-metric-card booking-card">
 
-          {/* =================================================
-              QUICK ADMINISTRATION
-          ================================================= */}
+            <div className="admin-metric-top">
 
-          <section className="admin-panel admin-quick-panel">
+              <div className="admin-metric-icon">
+                <CalendarCheck size={20} />
+              </div>
+
+              <span className="admin-metric-badge warning">
+                <Clock3 size={13} />
+                {formatNumber(
+                  bookingStats.pending,
+                )}{' '}
+                pending
+              </span>
+
+            </div>
+
+            <div className="admin-metric-value">
+              {loading
+                ? '—'
+                : formatNumber(
+                    bookingStats.total,
+                  )}
+            </div>
+
+            <div className="admin-metric-label">
+              Total bookings
+            </div>
+
+            <div className="admin-metric-footer">
+
+              <span>
+                {formatNumber(
+                  bookingStats.approved,
+                )}{' '}
+                approved
+              </span>
+
+              <span>
+                {formatNumber(
+                  bookingStats.rejected,
+                )}{' '}
+                rejected
+              </span>
+
+            </div>
+
+          </article>
+
+          <article className="admin-metric-card facility-card">
+
+            <div className="admin-metric-top">
+
+              <div className="admin-metric-icon">
+                <Building2 size={20} />
+              </div>
+
+              <span className="admin-metric-badge positive">
+                <CheckCircle2 size={13} />
+                {facilityOperationalPercentage}%
+                {' '}
+                operational
+              </span>
+
+            </div>
+
+            <div className="admin-metric-value">
+              {loading
+                ? '—'
+                : formatNumber(
+                    facilityStats.total,
+                  )}
+            </div>
+
+            <div className="admin-metric-label">
+              ICT facilities
+            </div>
+
+            <div className="admin-metric-footer">
+
+              <span>
+                {formatNumber(
+                  facilityStats.available,
+                )}{' '}
+                available
+              </span>
+
+              <span>
+                {formatNumber(
+                  facilityStats.maintenance,
+                )}{' '}
+                maintenance
+              </span>
+
+            </div>
+
+          </article>
+
+          <article className="admin-metric-card announcement-card">
+
+            <div className="admin-metric-top">
+
+              <div className="admin-metric-icon">
+                <Bell size={20} />
+              </div>
+
+              <span className="admin-metric-badge neutral">
+                Live
+              </span>
+
+            </div>
+
+            <div className="admin-metric-value">
+              {loading
+                ? '—'
+                : formatNumber(
+                    announcements.length,
+                  )}
+            </div>
+
+            <div className="admin-metric-label">
+              Published announcements
+            </div>
+
+            <div className="admin-metric-footer">
+
+              <span>
+                Current platform communication
+              </span>
+
+            </div>
+
+          </article>
+
+        </section>
+
+        {/* =====================================================
+            ANALYTICS
+        ====================================================== */}
+
+        <section className="admin-analytics-grid">
+
+          {/* USER DISTRIBUTION */}
+
+          <article className="admin-panel admin-role-panel">
 
             <div className="admin-panel-header">
 
               <div>
-                <span className="admin-eyebrow">
-                  Administration
+                <span className="admin-panel-kicker">
+                  LIVE USER ANALYTICS
                 </span>
 
                 <h2>
-                  Quick Actions
+                  User distribution
                 </h2>
+              </div>
 
-                <p>
-                  Common system management
-                  operations.
-                </p>
+              <Link to="/admin/users">
+                <Eye size={16} />
+                View users
+              </Link>
+
+            </div>
+
+            <div className="admin-role-total">
+
+              <div>
+                <strong>
+                  {formatNumber(
+                    userStats.total,
+                  )}
+                </strong>
+
+                <span>
+                  Total registered accounts
+                </span>
+              </div>
+
+              <div className="admin-role-total-icon">
+                <Users size={22} />
               </div>
 
             </div>
 
+            <div className="admin-distribution-list">
 
-            <div className="admin-quick-grid">
-
-              <Link
-                to="/admin/users"
-                className="admin-quick-action users"
-              >
-                <div className="admin-quick-icon">
-                  <Users size={20} />
-                </div>
-
-                <div>
-                  <strong>
-                    Manage users
-                  </strong>
-
-                  <span>
-                    Accounts, roles and
-                    permissions
-                  </span>
-                </div>
-
-                <ChevronRight size={17} />
-
-              </Link>
-
-
-              <Link
-                to="/admin/users/create"
-                className="admin-quick-action create"
-              >
-                <div className="admin-quick-icon">
-                  <UserRoundPlus
-                    size={20}
-                  />
-                </div>
-
-                <div>
-                  <strong>
-                    Add user
-                  </strong>
-
-                  <span>
-                    Create a platform account
-                  </span>
-                </div>
-
-                <ChevronRight size={17} />
-
-              </Link>
-
-
-              <Link
-                to="/admin/facilities"
-                className="admin-quick-action facilities"
-              >
-                <div className="admin-quick-icon">
-                  <Building2 size={20} />
-                </div>
-
-                <div>
-                  <strong>
-                    Manage facilities
-                  </strong>
-
-                  <span>
-                    Availability and resources
-                  </span>
-                </div>
-
-                <ChevronRight size={17} />
-
-              </Link>
-
-
-              <Link
-                to="/admin/bookings"
-                className="admin-quick-action bookings"
-              >
-                <div className="admin-quick-icon">
-                  <CalendarCheck
-                    size={20}
-                  />
-                </div>
-
-                <div>
-                  <strong>
-                    Booking oversight
-                  </strong>
-
-                  <span>
-                    Monitor all reservations
-                  </span>
-                </div>
-
-                <ChevronRight size={17} />
-
-              </Link>
-
-
-              <Link
-                to="/admin/announcements"
-                className="admin-quick-action announcements"
-              >
-                <div className="admin-quick-icon">
-                  <Megaphone size={20} />
-                </div>
-
-                <div>
-                  <strong>
-                    Announcements
-                  </strong>
-
-                  <span>
-                    Manage platform communication
-                  </span>
-                </div>
-
-                <ChevronRight size={17} />
-
-              </Link>
-
-
-              <Link
-                to="/admin/activity"
-                className="admin-quick-action activity"
-              >
-                <div className="admin-quick-icon">
-                  <Activity size={20} />
-                </div>
-
-                <div>
-                  <strong>
-                    Activity log
-                  </strong>
-
-                  <span>
-                    Review system actions
-                  </span>
-                </div>
-
-                <ChevronRight size={17} />
-
-              </Link>
-
-            </div>
-
-          </section>
-
-
-          {/* =================================================
-              FACILITY + SYSTEM HEALTH
-          ================================================= */}
-
-          <section className="admin-lower-grid">
-
-            {/* Facility status */}
-
-            <div className="admin-panel">
-
-              <div className="admin-panel-header">
-
-                <div>
-                  <span className="admin-eyebrow">
-                    Infrastructure
-                  </span>
-
-                  <h2>
-                    Facility Status
-                  </h2>
-
-                  <p>
-                    Current ICT Centre resource
-                    availability.
-                  </p>
-                </div>
-
-                <Link
-                  to="/admin/facilities"
-                  className="admin-panel-link"
+              {roleDistribution.map((item) => (
+                <div
+                  className="admin-distribution-row"
+                  key={item.label}
                 >
-                  Manage
-                  <ChevronRight size={15} />
-                </Link>
+
+                  <div className="admin-distribution-label">
+
+                    <span
+                      className={`admin-distribution-dot ${item.className}`}
+                    />
+
+                    <span>
+                      {item.label}
+                    </span>
+
+                    <strong>
+                      {formatNumber(
+                        item.value,
+                      )}
+                    </strong>
+
+                  </div>
+
+                  <div className="admin-distribution-track">
+
+                    <span
+                      className={`admin-distribution-bar ${item.className}`}
+                      style={{
+                        width: `${item.percentage}%`,
+                      }}
+                    />
+
+                  </div>
+
+                  <span className="admin-distribution-percent">
+                    {item.percentage}%
+                  </span>
+
+                </div>
+              ))}
+
+            </div>
+
+          </article>
+
+          {/* BOOKING DISTRIBUTION */}
+
+          <article className="admin-panel admin-booking-panel">
+
+            <div className="admin-panel-header">
+
+              <div>
+                <span className="admin-panel-kicker">
+                  LIVE BOOKING ANALYTICS
+                </span>
+
+                <h2>
+                  Booking distribution
+                </h2>
+              </div>
+
+              <Link to="/admin/bookings">
+                <Eye size={16} />
+                Manage
+              </Link>
+
+            </div>
+
+            <div className="admin-booking-summary">
+
+              <div className="admin-booking-number">
+
+                <strong>
+                  {formatNumber(
+                    bookingStats.total,
+                  )}
+                </strong>
+
+                <span>
+                  Total booking requests
+                </span>
 
               </div>
 
+              <div
+                className="admin-booking-ring"
+                style={{
+                  '--booking-progress':
+                    `${approvalPercentage}%`,
+                }}
+              >
 
-              <div className="admin-facility-grid">
+                <div className="admin-booking-ring-inner">
 
-                <div className="admin-facility-card available">
+                  <strong>
+                    {approvalPercentage}%
+                  </strong>
 
-                  <CircleCheck size={20} />
+                  <span>
+                    approved
+                  </span>
+
+                </div>
+
+              </div>
+
+            </div>
+
+            <div className="admin-booking-bars">
+
+              {bookingDistribution.map(
+                (item) => (
+                  <div
+                    className="admin-booking-bar-row"
+                    key={item.label}
+                  >
+
+                    <div>
+
+                      <span
+                        className={`admin-booking-bar-dot ${item.className}`}
+                      />
+
+                      <span>
+                        {item.label}
+                      </span>
+
+                    </div>
+
+                    <strong>
+                      {formatNumber(
+                        item.value,
+                      )}
+                    </strong>
+
+                  </div>
+                ),
+              )}
+
+            </div>
+
+          </article>
+
+        </section>
+
+        {/* =====================================================
+            OPERATIONS
+        ====================================================== */}
+
+        <section className="admin-operations-grid">
+
+          {/* ACTION QUEUE */}
+
+          <article className="admin-panel admin-actions-panel">
+
+            <div className="admin-panel-header">
+
+              <div>
+                <span className="admin-panel-kicker">
+                  LIVE OPERATIONS
+                </span>
+
+                <h2>
+                  Action queue
+                </h2>
+              </div>
+
+              <span className="admin-panel-count">
+                {pendingActions.reduce(
+                  (sum, item) =>
+                    sum + item.value,
+                  0,
+                )}
+              </span>
+
+            </div>
+
+            <div className="admin-action-list">
+
+              {pendingActions.map((item) => {
+                const Icon = item.icon;
+
+                return (
+                  <Link
+                    to={item.path}
+                    className="admin-action-item"
+                    key={item.label}
+                  >
+
+                    <div
+                      className={`admin-action-icon ${item.className}`}
+                    >
+                      <Icon size={18} />
+                    </div>
+
+                    <div className="admin-action-content">
+
+                      <strong>
+                        {item.label}
+                      </strong>
+
+                      <span>
+                        Open management area
+                      </span>
+
+                    </div>
+
+                    <strong className="admin-action-value">
+                      {formatNumber(
+                        item.value,
+                      )}
+                    </strong>
+
+                    <ArrowUpRight
+                      size={16}
+                      className="admin-action-arrow"
+                    />
+
+                  </Link>
+                );
+              })}
+
+            </div>
+
+          </article>
+
+          {/* FACILITIES */}
+
+          <article className="admin-panel admin-facility-panel">
+
+            <div className="admin-panel-header">
+
+              <div>
+                <span className="admin-panel-kicker">
+                  LIVE INFRASTRUCTURE
+                </span>
+
+                <h2>
+                  Facility status
+                </h2>
+              </div>
+
+              <Link to="/admin/facilities">
+                Manage
+              </Link>
+
+            </div>
+
+            <div className="admin-facility-overview">
+
+              <div className="admin-facility-main">
+
+                <div className="admin-facility-gauge">
+
+                  <div
+                    className="admin-facility-gauge-fill"
+                    style={{
+                      '--facility-progress':
+                        `${facilityOperationalPercentage}%`,
+                    }}
+                  >
+
+                    <div>
+
+                      <strong>
+                        {facilityOperationalPercentage}%
+                      </strong>
+
+                      <span>
+                        operational
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              <div className="admin-facility-stats">
+
+                <div>
+                  <span className="facility-status-dot available" />
 
                   <span>
                     Available
                   </span>
 
                   <strong>
-                    {loading
-                      ? '—'
-                      : availableFacilities.length}
+                    {formatNumber(
+                      facilityStats.available,
+                    )}
                   </strong>
-
                 </div>
 
-
-                <div className="admin-facility-card maintenance">
-
-                  <AlertTriangle
-                    size={20}
-                  />
+                <div>
+                  <span className="facility-status-dot maintenance" />
 
                   <span>
                     Maintenance
                   </span>
 
                   <strong>
-                    {loading
-                      ? '—'
-                      : maintenanceFacilities.length}
+                    {formatNumber(
+                      facilityStats.maintenance,
+                    )}
                   </strong>
-
                 </div>
 
-
-                <div className="admin-facility-card inactive">
-
-                  <XCircle size={20} />
+                <div>
+                  <span className="facility-status-dot inactive" />
 
                   <span>
                     Inactive
                   </span>
 
                   <strong>
-                    {loading
-                      ? '—'
-                      : inactiveFacilities.length}
+                    {formatNumber(
+                      facilityStats.inactive,
+                    )}
                   </strong>
-
                 </div>
 
               </div>
 
             </div>
 
+          </article>
 
-            {/* System health */}
+        </section>
 
-            <div className="admin-panel">
+        {/* =====================================================
+            ACTIVITY + ALERTS
+        ====================================================== */}
 
-              <div className="admin-panel-header">
+        <section className="admin-bottom-grid">
 
-                <div>
-                  <span className="admin-eyebrow">
-                    Platform
-                  </span>
+          {/* ACTIVITY */}
 
-                  <h2>
-                    System Health
-                  </h2>
-
-                  <p>
-                    Core platform service
-                    availability.
-                  </p>
-                </div>
-
-                <div className="admin-health-badge">
-                  <span />
-                  Operational
-                </div>
-
-              </div>
-
-
-              <div className="admin-health-list">
-
-                <div className="admin-health-item">
-
-                  <div className="admin-health-icon database">
-                    <Database size={17} />
-                  </div>
-
-                  <div>
-                    <strong>
-                      Database
-                    </strong>
-
-                    <span>
-                      PostgreSQL service
-                    </span>
-                  </div>
-
-                  <CircleCheck
-                    size={18}
-                    className="admin-health-success"
-                  />
-
-                </div>
-
-
-                <div className="admin-health-item">
-
-                  <div className="admin-health-icon api">
-                    <ShieldCheck
-                      size={17}
-                    />
-                  </div>
-
-                  <div>
-                    <strong>
-                      API
-                    </strong>
-
-                    <span>
-                      Backend service
-                    </span>
-                  </div>
-
-                  <CircleCheck
-                    size={18}
-                    className="admin-health-success"
-                  />
-
-                </div>
-
-
-                <div className="admin-health-item">
-
-                  <div className="admin-health-icon activity">
-                    <Activity size={17} />
-                  </div>
-
-                  <div>
-                    <strong>
-                      Activity logging
-                    </strong>
-
-                    <span>
-                      System monitoring
-                    </span>
-                  </div>
-
-                  <CircleCheck
-                    size={18}
-                    className="admin-health-success"
-                  />
-
-                </div>
-
-              </div>
-
-            </div>
-
-          </section>
-
-
-          {/* =================================================
-              RECENT ACTIVITY
-          ================================================= */}
-
-          <section className="admin-panel admin-activity-panel">
+          <article className="admin-panel admin-activity-panel">
 
             <div className="admin-panel-header">
 
               <div>
-                <span className="admin-eyebrow">
-                  Monitoring
+                <span className="admin-panel-kicker">
+                  LIVE AUDIT TRAIL
                 </span>
 
                 <h2>
-                  Recent System Activity
+                  Recent system activity
                 </h2>
-
-                <p>
-                  Latest actions recorded
-                  across the Kiangini platform.
-                </p>
               </div>
 
-              <Link
-                to="/admin/activity"
-                className="admin-panel-link"
-              >
-                View activity
-                <ChevronRight size={15} />
+              <Link to="/admin/activity">
+                View all
+                <ArrowUpRight size={15} />
               </Link>
 
             </div>
 
-
-            {loading ? (
-              <div className="admin-panel-state">
-                Loading activity...
-              </div>
-            ) : activities.length ===
-              0 ? (
-              <div className="admin-panel-state admin-empty-state">
-
-                <Activity size={25} />
-
-                <strong>
-                  No recent activity
-                </strong>
-
-                <span>
-                  System actions will appear
-                  here as they occur.
-                </span>
-
-              </div>
-            ) : (
+            {activities.length > 0 ? (
               <div className="admin-activity-list">
 
                 {activities
-                  .slice(0, 8)
+                  .slice(0, 7)
                   .map(
-                    (activity) => {
-                      const ActivityIcon =
-                        getActivityIcon(
+                    (
+                      activity,
+                      index,
+                    ) => {
+                      const title =
+                        getActivityTitle(
                           activity,
+                        );
+
+                      const Icon =
+                        getActivityIcon(
+                          title,
                         );
 
                       return (
                         <div
-                          key={
-                            activity.id
-                          }
                           className="admin-activity-item"
+                          key={
+                            activity.id ||
+                            activity.pk ||
+                            index
+                          }
                         >
 
-                          <div
-                            className={`admin-activity-icon ${
-                              activity.type ||
-                              'system'
-                            }`}
-                          >
-                            <ActivityIcon
-                              size={17}
-                            />
+                          <div className="admin-activity-icon">
+                            <Icon size={16} />
                           </div>
-
 
                           <div className="admin-activity-content">
 
                             <strong>
-                              {activity.title ||
-                                activity.action_display ||
-                                'System activity'}
+                              {title}
                             </strong>
 
                             <span>
-                              {activity.description ||
-                                activity.object_name ||
-                                'Activity recorded in the system.'}
+                              {getActivityUser(
+                                activity,
+                              )}
+
+                              {' · '}
+
+                              {formatActivityDate(
+                                activity.created_at ||
+                                  activity.timestamp ||
+                                  activity.date,
+                              )}
                             </span>
 
                           </div>
 
-
-                          <time>
-                            {formatActivityDate(
-                              activity.created_at,
-                            )}
-                          </time>
+                          <span className="admin-activity-arrow">
+                            <ArrowUpRight size={15} />
+                          </span>
 
                         </div>
                       );
@@ -1897,73 +1770,263 @@ function AdminDashboard() {
                   )}
 
               </div>
+            ) : (
+              <div className="admin-empty-state">
+
+                <Activity size={22} />
+
+                <strong>
+                  No recent activity
+                </strong>
+
+                <span>
+                  New system activity will
+                  appear here automatically.
+                </span>
+
+              </div>
             )}
 
-          </section>
+          </article>
 
+          {/* ALERTS */}
 
-          {/* =================================================
-              ADMIN SECURITY FOOTER
-          ================================================= */}
+          <article className="admin-panel admin-alert-panel">
 
-          <section className="admin-security-banner">
+            <div className="admin-panel-header">
 
-            <div className="admin-security-banner-icon">
-              <ShieldCheck size={21} />
+              <div>
+                <span className="admin-panel-kicker">
+                  LIVE ATTENTION
+                </span>
+
+                <h2>
+                  System alerts
+                </h2>
+              </div>
+
+              <AlertTriangle size={19} />
+
+            </div>
+
+            <div className="admin-alert-list">
+
+              <div className="admin-alert-item warning">
+
+                <div className="admin-alert-icon">
+                  <Clock3 size={17} />
+                </div>
+
+                <div>
+
+                  <strong>
+                    {formatNumber(
+                      bookingStats.pending,
+                    )}{' '}
+                    pending booking requests
+                  </strong>
+
+                  <span>
+                    Requests currently waiting
+                    for administrative action.
+                  </span>
+
+                </div>
+
+                <Link to="/admin/bookings">
+                  Review
+                </Link>
+
+              </div>
+
+              <div className="admin-alert-item danger">
+
+                <div className="admin-alert-icon">
+                  <Building2 size={17} />
+                </div>
+
+                <div>
+
+                  <strong>
+                    {formatNumber(
+                      facilityStats.maintenance,
+                    )}{' '}
+                    facilities under
+                    maintenance
+                  </strong>
+
+                  <span>
+                    Current infrastructure
+                    requiring attention.
+                  </span>
+
+                </div>
+
+                <Link to="/admin/facilities">
+                  Inspect
+                </Link>
+
+              </div>
+
+              <div
+                className={`admin-alert-item ${
+                  health.api === 'healthy' &&
+                  health.database ===
+                    'healthy'
+                    ? 'success'
+                    : 'warning'
+                }`}
+              >
+
+                <div className="admin-alert-icon">
+
+                  {health.api ===
+                    'healthy' &&
+                  health.database ===
+                    'healthy' ? (
+                    <CheckCircle2 size={17} />
+                  ) : (
+                    <AlertTriangle size={17} />
+                  )}
+
+                </div>
+
+                <div>
+
+                  <strong>
+                    {health.api ===
+                      'healthy' &&
+                    health.database ===
+                      'healthy'
+                      ? 'Core services operational'
+                      : 'System health requires attention'}
+                  </strong>
+
+                  <span>
+                    API and database health
+                    are monitored
+                    automatically.
+                  </span>
+
+                </div>
+
+                <span className="admin-alert-resolved">
+
+                  {health.api ===
+                    'healthy' &&
+                  health.database ===
+                    'healthy'
+                    ? 'Healthy'
+                    : 'Check'}
+
+                </span>
+
+              </div>
+
+            </div>
+
+          </article>
+
+        </section>
+
+        {/* =====================================================
+            ADMIN CONTROL
+        ====================================================== */}
+
+        <section className="admin-control-panel">
+
+          <div className="admin-control-heading">
+
+            <div className="admin-control-icon">
+              <LayoutDashboard size={20} />
             </div>
 
             <div>
 
-              <span className="admin-eyebrow">
-                Administrative access
+              <span>
+                ADMINISTRATIVE CONTROL
               </span>
 
               <h2>
-                Protected system controls
+                Manage the entire platform
               </h2>
 
               <p>
-                Administrative actions can affect
-                users, facilities, bookings and
-                platform data. Review changes
-                carefully before saving.
+                Users, bookings, facilities,
+                announcements, activity and
+                security.
               </p>
 
             </div>
 
+          </div>
+
+          <div className="admin-control-actions">
+
             <Link
-              to="/admin/settings"
-              className="admin-security-link"
+              to="/admin/users/create"
+              className="admin-control-button primary"
             >
-              Security settings
-              <ChevronRight size={16} />
+              <UserPlus size={17} />
+              Create user
             </Link>
 
-          </section>
+            <Link
+              to="/admin/bookings"
+              className="admin-control-button"
+            >
+              <CalendarCheck size={17} />
+              Bookings
+            </Link>
 
+            <Link
+              to="/admin/facilities"
+              className="admin-control-button"
+            >
+              <Building2 size={17} />
+              Facilities
+            </Link>
 
-          {/* Footer */}
+            <Link
+              to="/admin/settings"
+              className="admin-control-button"
+            >
+              <ShieldCheck size={17} />
+              Security
+            </Link>
 
-          <footer className="admin-dashboard-footer">
+          </div>
+
+        </section>
+
+        {/* =====================================================
+            FOOTER
+        ====================================================== */}
+
+        <footer className="admin-dashboard-footer">
+
+          <div>
+            <strong>
+              Kiangini ICT Centre
+            </strong>
+
             <span>
-              © 2026 Kiangini ICT Centre
+              Administrative Control Center
             </span>
+          </div>
 
-            <span>
-              Administration Portal
-            </span>
+          <div className="admin-footer-status">
 
-            <span>
-              {successfulSystems}/4 core
-              services available
-            </span>
-          </footer>
+            <span />
 
-        </div>
+            Live monitoring · 30s refresh
 
-      </main>
+          </div>
 
-    </div>
+        </footer>
+
+      </div>
+    </section>
   );
 }
 

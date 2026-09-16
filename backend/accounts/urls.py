@@ -3,6 +3,8 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views import (
+    AdminUserDetailView,
+    AdminUserListCreateView,
     ChangePasswordView,
     LoginView,
     LogoutView,
@@ -43,8 +45,21 @@ urlpatterns = [
     ),
 
     path(
-    'change-password/',
-    ChangePasswordView.as_view(),
-    name='change_password',
-),
+        'change-password/',
+        ChangePasswordView.as_view(),
+        name='change_password',
+    ),
+
+    # Administrator user management
+    path(
+        'users/',
+        AdminUserListCreateView.as_view(),
+        name='admin-users',
+    ),
+
+    path(
+        'users/<int:pk>/',
+        AdminUserDetailView.as_view(),
+        name='admin-user-detail',
+    ),
 ]

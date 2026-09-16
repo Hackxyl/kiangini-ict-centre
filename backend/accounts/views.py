@@ -1,3 +1,5 @@
+from django.db.models import Q
+
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -6,7 +8,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import User
-from .serializers import ChangePasswordSerializer, RegisterSerializer, UserSerializer
+from .serializers import (
+    AdminCreateUserSerializer,
+    AdminUserSerializer,
+    ChangePasswordSerializer,
+    RegisterSerializer,
+    UserSerializer,
+)
 
 from core.models import Activity
 from core.services import log_activity
@@ -35,9 +43,7 @@ class RegisterView(generics.CreateAPIView):
         )
 
 
-class LoginTokenSerializer(
-    TokenObtainPairSerializer
-):
+class LoginTokenSerializer(TokenObtainPairSerializer):
     username_field = User.USERNAME_FIELD
 
     @classmethod
@@ -83,25 +89,18 @@ class LogoutView(APIView):
     ]
 
     def post(self, request):
-        refresh_token = request.data.get(
-            'refresh'
-        )
+        refresh_token = request.data.get('refresh')
 
         if not refresh_token:
             return Response(
                 {
-                    'detail': (
-                        'Refresh token is required.'
-                    )
+                    'detail': 'Refresh token is required.',
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
-            token = RefreshToken(
-                refresh_token
-            )
-
+            token = RefreshToken(refresh_token)
             token.blacklist()
 
         except Exception:
@@ -109,7 +108,7 @@ class LogoutView(APIView):
                 {
                     'detail': (
                         'Invalid or expired refresh token.'
-                    )
+                    ),
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -131,7 +130,7 @@ class LogoutView(APIView):
 
         return Response(
             {
-                'detail': 'Logout successful.'
+                'detail': 'Logout successful.',
             },
             status=status.HTTP_200_OK,
         )
@@ -161,6 +160,7 @@ class MeView(generics.RetrieveUpdateAPIView):
             object_id=user.id,
             object_name=user.email,
         )
+
 
 class ChangePasswordView(APIView):
     permission_classes = [
@@ -205,7 +205,124 @@ class ChangePasswordView(APIView):
                 'detail': (
                     'Your password has been changed '
                     'successfully.'
-                )
+                ),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class IsAdminUser(permissions.BasePermission):
+    """
+    Allows access only to authenticated users
+    with the administrator role.
+    """
+
+    message = 'Administrator access is required.'
+
+    def has_permission(self, request, view):
+        return (
+            request.user
+            and request.user.is_authenticated
+            and request.user.role == User.ROLE_ADMIN
+        )
+
+
+class AdminUserListCreateView(generics.ListCreateAPIView):
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsAdminUser,
+    ]
+
+    def get_queryset(self):
+        queryset = User.objects.all().order_by(
+            '-date_joined'
+        )
+
+        search = self.request.query_params.get(
+            'search',
+            '',
+        ).strip()
+
+        role = self.request.query_params.get(
+            'role',
+            '',
+        ).strip().lower()
+
+        status_filter = self.request.query_params.get(
+            'status',
+            '',
+        ).strip().lower()
+
+        if search:
+            queryset = queryset.filter(
+                Q(first_name__icontains=search)
+                | Q(last_name__icontains=search)
+                | Q(email__icontains=search)
+                | Q(student_id__icontains=search)
+                | Q(phone__icontains=search)
+                | Q(course__icontains=search)
+            )
+
+        if role in {
+            User.ROLE_STUDENT,
+            User.ROLE_OFFICER,
+            User.ROLE_ADMIN,
+        }:
+            queryset = queryset.filter(
+                role=role
+            )
+
+        if status_filter == 'active':
+            queryset = queryset.filter(
+                is_active=True
+            )
+
+        elif status_filter == 'inactive':
+            queryset = queryset.filter(
+                is_active=False
+            )
+
+        return queryset
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return AdminCreateUserSerializer
+
+        return AdminUserSerializer
+
+
+class AdminUserDetailView(
+    generics.RetrieveUpdateDestroyAPIView
+):
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsAdminUser,
+    ]
+
+    queryset = User.objects.all()
+
+    def get_serializer_class(self):
+        return AdminUserSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+
+        if user.id == request.user.id:
+            return Response(
+                {
+                    'detail': (
+                        'You cannot delete your own '
+                        'administrator account.'
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.delete()
+
+        return Response(
+            {
+                'detail': 'User deleted successfully.',
             },
             status=status.HTTP_200_OK,
         )

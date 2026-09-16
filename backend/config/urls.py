@@ -14,32 +14,45 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import include, path
 
-from core.views import (
-    ActivityListView,
-    ActivityStatsView,
-)
-
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-
-    path('api/auth/', include('accounts.urls')),
-    path('api/facilities/', include('facilities.urls')),
-    path('api/bookings/', include('bookings.urls')),
-    path('api/announcements/', include('announcements.urls')),
-    path('api/core/', include('core.urls')),
-
+    # Django administration
     path(
-        'api/activities/',
-        ActivityListView.as_view(),
-        name='activity-list',
+        'admin/',
+        admin.site.urls,
     ),
+
+    # Authentication and user management
     path(
-        'api/activities/stats/',
-        ActivityStatsView.as_view(),
-        name='activity-stats',
+        'api/auth/',
+        include('accounts.urls'),
+    ),
+
+    # Facilities
+    path(
+        'api/facilities/',
+        include('facilities.urls'),
+    ),
+
+    # Bookings
+    path(
+        'api/bookings/',
+        include('bookings.urls'),
+    ),
+
+    # Announcements
+    path(
+        'api/announcements/',
+        include('announcements.urls'),
+    ),
+
+    # Core services
+    path(
+        'api/core/',
+        include('core.urls'),
     ),
 ]

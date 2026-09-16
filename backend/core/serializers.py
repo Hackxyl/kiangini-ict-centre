@@ -18,7 +18,6 @@ class ActivitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Activity
-
         fields = [
             'id',
             'activity_type',
@@ -33,7 +32,6 @@ class ActivitySerializer(serializers.ModelSerializer):
             'object_name',
             'created_at',
         ]
-
         read_only_fields = fields
 
     def get_user_name(self, obj):

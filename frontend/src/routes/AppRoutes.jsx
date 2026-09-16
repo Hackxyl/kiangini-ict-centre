@@ -16,6 +16,7 @@ import RoleRoute from './RoleRoute';
 
 import StudentLayout from '../layouts/StudentLayout';
 import OfficerLayout from '../layouts/OfficerLayout';
+import AdminLayout from '../layouts/AdminLayout';
 
 import StudentDashboard from '../pages/student/StudentDashboard';
 import MyBookings from '../pages/student/MyBookings';
@@ -38,9 +39,11 @@ import OfficerSettings from '../pages/officer/OfficerSettings';
 
 import AdminDashboard from '../pages/admin/AdminDashboard';
 
+
 function NotFound() {
   return <h1>Page Not Found</h1>;
 }
+
 
 function AppRoutes() {
   return (
@@ -175,6 +178,21 @@ function AppRoutes() {
           />
 
           <Route
+            path="/officer/bookings"
+            element={<OfficerBookings />}
+          />
+
+          <Route
+            path="/officer/bookings/:id"
+            element={<OfficerBookingDetails />}
+          />
+
+          <Route
+            path="/officer/facilities"
+            element={<OfficerFacilities />}
+          />
+
+          <Route
             path="/officer/announcements"
             element={<OfficerAnnouncements />}
           />
@@ -187,11 +205,6 @@ function AppRoutes() {
           <Route
             path="/officer/announcements/:id/edit"
             element={<EditOfficerAnnouncement />}
-          />
-
-          <Route
-            path="/officer/facilities"
-            element={<OfficerFacilities />}
           />
 
           <Route
@@ -209,16 +222,6 @@ function AppRoutes() {
             element={<OfficerSettings />}
           />
 
-          <Route
-            path="/officer/bookings"
-            element={<OfficerBookings />}
-          />
-
-          <Route
-            path="/officer/bookings/:id"
-            element={<OfficerBookingDetails />}
-          />
-
         </Route>
 
       </Route>
@@ -226,6 +229,7 @@ function AppRoutes() {
 
       {/* =====================================================
           PROTECTED ADMIN PORTAL
+          Full system administration
       ===================================================== */}
 
       <Route
@@ -236,10 +240,16 @@ function AppRoutes() {
         }
       >
 
-        <Route
-          path="/admin/dashboard"
-          element={<AdminDashboard />}
-        />
+        <Route element={<AdminLayout />}>
+
+          {/* Dashboard */}
+
+          <Route
+            path="/admin/dashboard"
+            element={<AdminDashboard />}
+          />
+
+        </Route>
 
       </Route>
 
@@ -256,5 +266,6 @@ function AppRoutes() {
     </Routes>
   );
 }
+
 
 export default AppRoutes;
