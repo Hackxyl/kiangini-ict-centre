@@ -58,7 +58,7 @@ const EMPTY_FORM = {
   course: "",
   year_of_study: "",
   password: "",
-  confirm_password: "",
+  password_confirm: "",
   is_active: true,
 };
 
@@ -114,7 +114,7 @@ const getUserPayload = (user) => ({
       ? ""
       : String(user.year_of_study),
   password: "",
-  confirm_password: "",
+  password_confirm: "",
   is_active: user?.is_active !== false,
 });
 
@@ -240,9 +240,9 @@ function AdminUserForm() {
       return "Password must contain at least 8 characters.";
     }
 
-    if (form.password !== form.confirm_password) {
-      return "Passwords do not match.";
-    }
+    if (form.password !== form.password_confirm) {
+  return "Passwords do not match.";
+}
 
     return "";
   };
@@ -282,7 +282,7 @@ function AdminUserForm() {
       }
 
       if (!isEditMode) {
-        payload.confirm_password = form.confirm_password;
+        payload.password_confirm = form.password_confirm;
       }
 
       if (isEditMode) {
