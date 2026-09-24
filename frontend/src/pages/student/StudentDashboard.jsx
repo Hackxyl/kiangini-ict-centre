@@ -543,9 +543,7 @@ function StudentDashboard() {
 
       <section className="dashboard-welcome">
         <div>
-          <span className="dashboard-eyebrow">
-            STUDENT DASHBOARD
-          </span>
+          
 
           <h1>
             {greeting},{" "}

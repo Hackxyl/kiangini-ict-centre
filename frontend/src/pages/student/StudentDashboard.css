@@ -134,6 +134,16 @@
    BUTTONS
 ================================================================ */
 
+.student-dashboard {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 28px 32px 40px;
+  box-sizing: border-box;
+
+  /* existing variables below */
+}
+
 .student-dashboard .btn {
   display: inline-flex;
   align-items: center;
@@ -1333,5 +1343,24 @@
   .dashboard-grid,
   .dashboard-bottom-grid {
     break-inside: avoid;
+  }
+}
+
+@media (max-width: 1100px) {
+  .student-dashboard {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .student-dashboard {
+    padding: 22px 18px 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .student-dashboard {
+    padding: 18px 14px 28px;
   }
 }
