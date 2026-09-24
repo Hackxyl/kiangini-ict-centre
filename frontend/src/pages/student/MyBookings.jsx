@@ -247,9 +247,7 @@ function MyBookings() {
         {/* Header */}
         <div className="my-bookings-header">
           <div>
-            <span className="dashboard-eyebrow">
-              Student Portal
-            </span>
+            
 
             <h1>My Bookings</h1>
 

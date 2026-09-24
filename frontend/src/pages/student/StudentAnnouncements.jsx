@@ -194,9 +194,7 @@ function StudentAnnouncements() {
         <div className="student-announcements-header">
 
           <div>
-            <span className="dashboard-eyebrow">
-              Student Portal
-            </span>
+           
 
             <h1>
               Announcements

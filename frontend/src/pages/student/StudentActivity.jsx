@@ -295,9 +295,7 @@ function StudentActivity() {
 
         <div className="student-activity-header">
           <div>
-            <span className="dashboard-eyebrow">
-              Student Portal
-            </span>
+            
 
             <h1>Activity</h1>
 

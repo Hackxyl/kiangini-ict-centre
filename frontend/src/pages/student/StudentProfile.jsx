@@ -271,9 +271,7 @@ function StudentProfile() {
         <div className="student-profile-header">
 
           <div>
-            <span className="dashboard-eyebrow">
-              Student Portal
-            </span>
+            
 
             <h1>My Profile</h1>
 
