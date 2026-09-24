@@ -406,9 +406,7 @@ function NewBooking() {
 
       <section className="new-booking-header">
         <div>
-          <span className="dashboard-eyebrow">
-            Facility Booking
-          </span>
+          
 
           <h1>Book an ICT Facility</h1>
 
