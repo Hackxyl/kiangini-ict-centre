@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+
 import api from "../../config/api";
 import "./AdminUserForm.css";
 
@@ -65,19 +66,23 @@ const EMPTY_FORM = {
 const getErrorMessage = (error) => {
   const data = error?.response?.data;
 
+  if (!data) {
+    return "Unable to connect to the server. Please try again.";
+  }
+
   if (typeof data === "string") {
     return data;
   }
 
-  if (data?.detail) {
+  if (data.detail) {
     return data.detail;
   }
 
-  if (data?.message) {
+  if (data.message) {
     return data.message;
   }
 
-  if (data && typeof data === "object") {
+  if (typeof data === "object") {
     const messages = Object.entries(data)
       .flatMap(([field, value]) => {
         const values = Array.isArray(value) ? value : [value];
@@ -188,10 +193,13 @@ function AdminUserForm() {
     setForm((current) => ({
       ...current,
       role,
-      student_id: role === "student" ? current.student_id : "",
+      student_id:
+        role === "student" ? current.student_id : "",
       course: role === "student" ? current.course : "",
       year_of_study:
-        role === "student" ? current.year_of_study : "",
+        role === "student"
+          ? current.year_of_study
+          : "",
     }));
 
     setError("");
@@ -232,17 +240,37 @@ function AdminUserForm() {
       }
     }
 
+    /*
+     * Password rules:
+     * - Creating: password is required.
+     * - Editing: password is optional.
+     * - Whenever a password is entered, confirmation is required.
+     */
     if (!isEditMode && !form.password) {
       return "Password is required when creating a user.";
     }
 
-    if (form.password && form.password.length < 8) {
-      return "Password must contain at least 8 characters.";
+    if (form.password) {
+      if (form.password.length < 8) {
+        return "Password must contain at least 8 characters.";
+      }
+
+      if (!form.password_confirm) {
+        return "Password confirmation is required.";
+      }
+
+      if (form.password !== form.password_confirm) {
+        return "Passwords do not match.";
+      }
     }
 
-    if (form.password !== form.password_confirm) {
-  return "Passwords do not match.";
-}
+    /*
+     * This also prevents an accidental mismatch if a
+     * confirmation is entered without a password.
+     */
+    if (!form.password && form.password_confirm) {
+      return "Enter a password before confirming it.";
+    }
 
     return "";
   };
@@ -262,6 +290,9 @@ function AdminUserForm() {
       setError("");
       setSuccess("");
 
+      /*
+       * Base account information.
+       */
       const payload = {
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
@@ -271,17 +302,31 @@ function AdminUserForm() {
         is_active: form.is_active,
       };
 
+      /*
+       * Student-specific information.
+       */
       if (form.role === "student") {
         payload.student_id = form.student_id.trim();
         payload.course = form.course.trim();
         payload.year_of_study = Number(form.year_of_study);
+      } else {
+        /*
+         * Clear student fields for non-student accounts.
+         */
+        payload.student_id = null;
+        payload.course = "";
+        payload.year_of_study = null;
       }
 
+      /*
+       * Password information.
+       *
+       * The backend expects:
+       * password
+       * password_confirm
+       */
       if (form.password) {
         payload.password = form.password;
-      }
-
-      if (!isEditMode) {
         payload.password_confirm = form.password_confirm;
       }
 
@@ -294,6 +339,12 @@ function AdminUserForm() {
           navigate("/admin/users");
         }, 700);
       } else {
+        /*
+         * For creation the password confirmation is mandatory.
+         */
+        payload.password = form.password;
+        payload.password_confirm = form.password_confirm;
+
         await api.post("/auth/users/", payload);
 
         setSuccess("User account created successfully.");
@@ -304,6 +355,12 @@ function AdminUserForm() {
       }
     } catch (err) {
       console.error("Failed to save user:", err);
+
+      console.error(
+        "Backend response:",
+        err?.response?.data,
+      );
+
       setError(getErrorMessage(err));
     } finally {
       setSaving(false);
@@ -464,6 +521,7 @@ function AdminUserForm() {
 
               <div className="admin-user-form-grid">
 
+                {/* FIRST NAME */}
                 <div className="admin-user-field">
                   <label htmlFor="first_name">
                     First name
@@ -483,6 +541,7 @@ function AdminUserForm() {
                   </div>
                 </div>
 
+                {/* LAST NAME */}
                 <div className="admin-user-field">
                   <label htmlFor="last_name">
                     Last name
@@ -502,6 +561,7 @@ function AdminUserForm() {
                   </div>
                 </div>
 
+                {/* EMAIL */}
                 <div className="admin-user-field">
                   <label htmlFor="email">
                     Email address
@@ -522,6 +582,7 @@ function AdminUserForm() {
                   </div>
                 </div>
 
+                {/* PHONE */}
                 <div className="admin-user-field">
                   <label htmlFor="phone">
                     Phone number
@@ -565,6 +626,7 @@ function AdminUserForm() {
 
                 <div className="admin-user-form-grid">
 
+                  {/* STUDENT ID */}
                   <div className="admin-user-field">
                     <label htmlFor="student_id">
                       Student ID
@@ -583,6 +645,7 @@ function AdminUserForm() {
                     </div>
                   </div>
 
+                  {/* YEAR */}
                   <div className="admin-user-field">
                     <label htmlFor="year_of_study">
                       Year of study
@@ -605,6 +668,7 @@ function AdminUserForm() {
                     </select>
                   </div>
 
+                  {/* COURSE */}
                   <div className="admin-user-field full">
                     <label htmlFor="course">
                       Course / Programme
@@ -647,6 +711,7 @@ function AdminUserForm() {
 
               <div className="admin-user-form-grid">
 
+                {/* PASSWORD */}
                 <div className="admin-user-field">
                   <label htmlFor="password">
                     {isEditMode
@@ -666,11 +731,7 @@ function AdminUserForm() {
                       value={form.password}
                       onChange={handleChange}
                       placeholder="Minimum 8 characters"
-                      autoComplete={
-                        isEditMode
-                          ? "new-password"
-                          : "new-password"
-                      }
+                      autoComplete="new-password"
                     />
 
                     <button
@@ -695,21 +756,22 @@ function AdminUserForm() {
                   </div>
                 </div>
 
+                {/* PASSWORD CONFIRMATION */}
                 <div className="admin-user-field">
-                  <label htmlFor="confirm_password">
+                  <label htmlFor="password_confirm">
                     Confirm password
                   </label>
 
                   <div className="admin-user-input">
                     <input
-                      id="confirm_password"
-                      name="confirm_password"
+                      id="password_confirm"
+                      name="password_confirm"
                       type={
                         showConfirmPassword
                           ? "text"
                           : "password"
                       }
-                      value={form.confirm_password}
+                      value={form.password_confirm}
                       onChange={handleChange}
                       placeholder="Repeat password"
                       autoComplete="new-password"
@@ -748,12 +810,12 @@ function AdminUserForm() {
                 </span>
               </div>
             </section>
-
           </div>
 
           {/* SIDEBAR */}
           <aside className="admin-user-form-sidebar">
 
+            {/* ACCOUNT PREVIEW */}
             <div className="admin-user-preview-card">
               <span className="admin-user-preview-kicker">
                 Account preview
@@ -765,6 +827,7 @@ function AdminUserForm() {
                 {form.first_name?.charAt(0) ||
                   form.email?.charAt(0) ||
                   "U"}
+
                 {form.last_name?.charAt(0) || ""}
               </div>
 
@@ -785,6 +848,7 @@ function AdminUserForm() {
 
               <div className="admin-user-preview-divider" />
 
+              {/* STATUS */}
               <div className="admin-user-preview-row">
                 <span>Status</span>
 
@@ -796,16 +860,19 @@ function AdminUserForm() {
                   }
                 >
                   <i />
+
                   {form.is_active
                     ? "Active"
                     : "Inactive"}
                 </strong>
               </div>
 
+              {/* STUDENT DETAILS */}
               {form.role === "student" && (
                 <>
                   <div className="admin-user-preview-row">
                     <span>Student ID</span>
+
                     <strong>
                       {form.student_id || "Not set"}
                     </strong>
@@ -813,6 +880,7 @@ function AdminUserForm() {
 
                   <div className="admin-user-preview-row">
                     <span>Year</span>
+
                     <strong>
                       {form.year_of_study
                         ? `Year ${form.year_of_study}`
@@ -823,6 +891,7 @@ function AdminUserForm() {
               )}
             </div>
 
+            {/* ROLE ACCESS */}
             <div className="admin-user-access-card">
               <div className="admin-user-access-icon">
                 <ShieldCheck size={18} />
@@ -837,9 +906,11 @@ function AdminUserForm() {
               </div>
             </div>
 
+            {/* ACCOUNT STATUS */}
             <div className="admin-user-status-card">
               <div>
                 <strong>Account status</strong>
+
                 <span>
                   Control whether this user can sign in.
                 </span>
@@ -857,6 +928,7 @@ function AdminUserForm() {
               </label>
             </div>
 
+            {/* ACTIONS */}
             <div className="admin-user-form-actions">
               <Link
                 to="/admin/users"
@@ -881,6 +953,7 @@ function AdminUserForm() {
                 ) : (
                   <>
                     <Save size={17} />
+
                     {isEditMode
                       ? "Save changes"
                       : "Create user"}
@@ -889,7 +962,6 @@ function AdminUserForm() {
               </button>
             </div>
           </aside>
-
         </form>
       </div>
     </div>
