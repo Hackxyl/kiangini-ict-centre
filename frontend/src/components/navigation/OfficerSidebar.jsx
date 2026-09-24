@@ -1,4 +1,4 @@
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import {
   Bell,
   CalendarCheck,
@@ -64,34 +64,37 @@ function getRoleLabel(role) {
 }
 
 function OfficerSidebar({ open, onClose }) {
-  const {
-    user,
-    logout,
-  } = useAuth();
+  const { user, logout } = useAuth();
+  const location = useLocation();
 
   const navigation = [
     {
-      label: 'Overview',
+      label: 'Dashboard',
+      description: 'Officer overview',
       icon: Home,
       path: '/officer/dashboard',
     },
     {
       label: 'Booking Requests',
+      description: 'Review facility requests',
       icon: CalendarCheck,
       path: '/officer/bookings',
     },
     {
       label: 'Facilities',
+      description: 'Manage ICT facilities',
       icon: Monitor,
       path: '/officer/facilities',
     },
     {
       label: 'Announcements',
+      description: 'Manage centre updates',
       icon: Bell,
       path: '/officer/announcements',
     },
     {
       label: 'Activity',
+      description: 'View officer activity',
       icon: ClipboardList,
       path: '/officer/activity',
     },
@@ -100,20 +103,76 @@ function OfficerSidebar({ open, onClose }) {
   const accountNavigation = [
     {
       label: 'Profile',
+      description: 'Manage your profile',
       icon: UserRound,
       path: '/officer/profile',
     },
     {
       label: 'Settings',
+      description: 'Account preferences',
       icon: Settings,
       path: '/officer/settings',
     },
   ];
 
+  const isItemActive = (path) => {
+    if (path === '/officer/dashboard') {
+      return location.pathname === path;
+    }
+
+    return (
+      location.pathname === path ||
+      location.pathname.startsWith(`${path}/`)
+    );
+  };
+
   const handleLogout = async () => {
     await logout();
     onClose();
   };
+
+  const renderNavigation = (items) =>
+    items.map((item) => {
+      const Icon = item.icon;
+      const active = isItemActive(item.path);
+
+      return (
+        <NavLink
+          key={item.path}
+          to={item.path}
+          title={item.description}
+          className={`officer-nav-link ${
+            active ? 'active' : ''
+          }`}
+          aria-current={active ? 'page' : undefined}
+          onClick={onClose}
+        >
+          <span className="officer-nav-icon">
+            <Icon
+              size={18}
+              strokeWidth={active ? 2.2 : 1.9}
+            />
+          </span>
+
+          <span className="officer-nav-content">
+            <span className="officer-nav-text">
+              {item.label}
+            </span>
+
+            <span className="officer-nav-description">
+              {item.description}
+            </span>
+          </span>
+
+          {active && (
+            <span
+              className="officer-nav-active-indicator"
+              aria-hidden="true"
+            />
+          )}
+        </NavLink>
+      );
+    });
 
   return (
     <>
@@ -129,8 +188,9 @@ function OfficerSidebar({ open, onClose }) {
         className={`officer-sidebar ${
           open ? 'is-open' : ''
         }`}
-        aria-label="Officer navigation"
+        aria-label="ICT Officer navigation"
       >
+        {/* Header */}
         <div className="officer-sidebar-header">
           <Link
             to="/"
@@ -139,9 +199,9 @@ function OfficerSidebar({ open, onClose }) {
           >
             <span className="officer-brand-mark">
               <img
-      src="/images/hero-ict.png"
-      alt="Kiangini ICT Centre"
-    />
+                src="/images/hero-ict.png"
+                alt="Kiangini ICT Centre"
+              />
             </span>
 
             <span className="officer-brand-text">
@@ -160,6 +220,7 @@ function OfficerSidebar({ open, onClose }) {
           </button>
         </div>
 
+        {/* Officer profile */}
         <div className="officer-sidebar-user">
           <div
             className="officer-avatar"
@@ -169,75 +230,51 @@ function OfficerSidebar({ open, onClose }) {
           </div>
 
           <div className="officer-user-info">
-            <strong>
-              {getDisplayName(user)}
-            </strong>
+            <strong>{getDisplayName(user)}</strong>
 
             <span>
+              <i aria-hidden="true" />
               {getRoleLabel(user?.role)}
             </span>
           </div>
         </div>
 
-        <nav className="officer-sidebar-nav">
-          <span className="officer-nav-label">
-            MAIN MENU
-          </span>
+        {/* Navigation */}
+        <nav
+          className="officer-sidebar-nav"
+          aria-label="Officer sections"
+        >
+          <div className="officer-nav-section">
+            <span className="officer-nav-label">
+              MAIN MENU
+            </span>
 
-          <div className="officer-nav-list">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `officer-nav-link ${
-                      isActive ? 'active' : ''
-                    }`
-                  }
-                  onClick={onClose}
-                >
-                  <Icon size={18} />
-                  <span>{item.label}</span>
-                </NavLink>
-              );
-            })}
+            <div className="officer-nav-list">
+              {renderNavigation(navigation)}
+            </div>
           </div>
 
-          <span className="officer-nav-label officer-account-label">
-            ACCOUNT
-          </span>
+          <div className="officer-nav-section officer-account-section">
+            <span className="officer-nav-label">
+              ACCOUNT
+            </span>
 
-          <div className="officer-nav-list">
-            {accountNavigation.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `officer-nav-link ${
-                      isActive ? 'active' : ''
-                    }`
-                  }
-                  onClick={onClose}
-                >
-                  <Icon size={18} />
-                  <span>{item.label}</span>
-                </NavLink>
-              );
-            })}
+            <div className="officer-nav-list">
+              {renderNavigation(accountNavigation)}
+            </div>
           </div>
         </nav>
 
+        {/* Bottom */}
         <div className="officer-sidebar-bottom">
           <div className="officer-sidebar-help">
-            <span>
-              ICT Centre Administration
-            </span>
+            <div className="officer-help-heading">
+              <span className="officer-help-dot" />
+
+              <span>
+                ICT Centre Administration
+              </span>
+            </div>
 
             <Link
               to="/contact"

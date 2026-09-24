@@ -39,6 +39,22 @@ import OfficerSettings from '../pages/officer/OfficerSettings';
 
 import AdminDashboard from '../pages/admin/AdminDashboard';
 
+import AdminUsers from '../pages/admin/AdminUsers';
+import AdminUserForm from '../pages/admin/AdminUserForm';
+
+import AdminBookings from '../pages/admin/AdminBookings';
+import AdminBookingDetails from '../pages/admin/AdminBookingDetails';
+
+import AdminFacilities from '../pages/admin/AdminFacilities';
+import AdminFacilityForm from '../pages/admin/AdminFacilityForm';
+
+import AdminAnnouncements from '../pages/admin/AdminAnnouncements';
+import AdminAnnouncementForm from '../pages/admin/AdminAnnouncementForm';
+
+import AdminActivity from '../pages/admin/AdminActivity';
+
+import AdminSettings from '../pages/admin/AdminSettings';
+
 
 function NotFound() {
   return <h1>Page Not Found</h1>;
@@ -227,32 +243,62 @@ function AppRoutes() {
       </Route>
 
 
-      {/* =====================================================
-          PROTECTED ADMIN PORTAL
-          Full system administration
-      ===================================================== */}
+      {/* PROTECTED ADMIN PORTAL */}
+           <Route element={<RoleRoute allowedRoles={['admin']} />}>
+  <Route element={<AdminLayout />}>
+    <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
-      <Route
-        element={
-          <RoleRoute
-            allowedRoles={['admin']}
-          />
-        }
-      >
+    <Route path="/admin/users" element={<AdminUsers />} />
+    <Route path="/admin/users/new" element={<AdminUserForm />} />
+    <Route path="/admin/users/:id/edit" element={<AdminUserForm />} />
 
-        <Route element={<AdminLayout />}>
+    <Route path="/admin/bookings" element={<AdminBookings />} />
+    <Route
+      path="/admin/bookings/:id"
+      element={<AdminBookingDetails />}
+    />
 
-          {/* Dashboard */}
+    <Route
+      path="/admin/facilities"
+      element={<AdminFacilities />}
+    />
 
-          <Route
-            path="/admin/dashboard"
-            element={<AdminDashboard />}
-          />
+    <Route
+      path="/admin/facilities/new"
+      element={<AdminFacilityForm />}
+    />
 
-        </Route>
+    <Route
+      path="/admin/facilities/:id/edit"
+      element={<AdminFacilityForm />}
+    />
 
-      </Route>
+    <Route
+      path="/admin/announcements"
+      element={<AdminAnnouncements />}
+    />
 
+    <Route
+      path="/admin/announcements/new"
+      element={<AdminAnnouncementForm />}
+    />
+
+    <Route
+      path="/admin/announcements/:id/edit"
+      element={<AdminAnnouncementForm />}
+    />
+
+    <Route
+      path="/admin/activity"
+      element={<AdminActivity />}
+    />
+    <Route
+      path="/admin/settings"
+      element={<AdminSettings />}
+    />
+    
+  </Route>
+</Route>
 
       {/* =====================================================
           404

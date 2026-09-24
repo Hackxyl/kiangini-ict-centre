@@ -68,7 +68,7 @@ function getDisplayName(user) {
 
 function formatNumber(value) {
   return new Intl.NumberFormat('en-US').format(
-    value || 0,
+    Number(value) || 0,
   );
 }
 
@@ -115,7 +115,35 @@ function extractResults(data) {
     return data.data;
   }
 
+  if (Array.isArray(data?.items)) {
+    return data.items;
+  }
+
   return [];
+}
+
+function extractTotal(data, fallback = 0) {
+  if (Array.isArray(data)) {
+    return data.length;
+  }
+
+  const candidates = [
+    data?.count,
+    data?.total,
+    data?.total_count,
+    data?.pagination?.count,
+    data?.pagination?.total,
+    data?.meta?.count,
+    data?.meta?.total,
+  ];
+
+  const numericValue = candidates.find(
+    (value) =>
+      typeof value === 'number' &&
+      Number.isFinite(value),
+  );
+
+  return numericValue ?? fallback;
 }
 
 function normalizeStatus(value) {
@@ -126,19 +154,23 @@ function normalizeStatus(value) {
 }
 
 function getActivityIcon(action = '') {
-  const value = action.toLowerCase();
+  const value = String(action).toLowerCase();
 
   if (
     value.includes('user') ||
     value.includes('student') ||
-    value.includes('officer')
+    value.includes('officer') ||
+    value.includes('register') ||
+    value.includes('profile')
   ) {
     return UserCog;
   }
 
   if (
     value.includes('booking') ||
-    value.includes('reservation')
+    value.includes('reservation') ||
+    value.includes('approve') ||
+    value.includes('reject')
   ) {
     return CalendarCheck;
   }
@@ -152,14 +184,18 @@ function getActivityIcon(action = '') {
 
   if (
     value.includes('announcement') ||
-    value.includes('notification')
+    value.includes('notification') ||
+    value.includes('publish')
   ) {
     return Bell;
   }
 
   if (
     value.includes('security') ||
-    value.includes('permission')
+    value.includes('permission') ||
+    value.includes('password') ||
+    value.includes('login') ||
+    value.includes('logout')
   ) {
     return ShieldCheck;
   }
@@ -178,6 +214,15 @@ function getActivityTitle(activity) {
   );
 }
 
+function getActivityDescription(activity) {
+  return (
+    activity?.description ||
+    activity?.message ||
+    activity?.object_name ||
+    ''
+  );
+}
+
 function getActivityUser(activity) {
   return (
     activity?.user_name ||
@@ -185,6 +230,15 @@ function getActivityUser(activity) {
     activity?.user?.email ||
     activity?.performed_by ||
     'System'
+  );
+}
+
+function getActivityType(activity) {
+  return normalizeStatus(
+    activity?.activity_type ||
+      activity?.type ||
+      activity?.category ||
+      '',
   );
 }
 
@@ -205,6 +259,113 @@ function getFacilityStatus(facility) {
   );
 }
 
+function getAnnouncementStatus(announcement) {
+  return normalizeStatus(
+    announcement?.status ||
+      announcement?.announcement_status ||
+      announcement?.state ||
+      announcement?.publication_status ||
+      announcement?.visibility,
+  );
+}
+
+function isPublishedAnnouncement(announcement) {
+  const status =
+    getAnnouncementStatus(announcement);
+
+  if (
+    [
+      'published',
+      'publish',
+      'active',
+      'live',
+    ].includes(status)
+  ) {
+    return true;
+  }
+
+  if (
+    [
+      'draft',
+      'unpublished',
+      'inactive',
+      'archived',
+      'scheduled',
+    ].includes(status)
+  ) {
+    return false;
+  }
+
+  /*
+   * Some APIs expose publication using a boolean.
+   */
+  if (
+    typeof announcement?.is_published ===
+    'boolean'
+  ) {
+    return announcement.is_published;
+  }
+
+  if (
+    typeof announcement?.published ===
+    'boolean'
+  ) {
+    return announcement.published;
+  }
+
+  /*
+   * If no status information exists, do not
+   * incorrectly classify the announcement as
+   * pending administrative work.
+   */
+  return false;
+}
+
+function isDraftAnnouncement(announcement) {
+  const status =
+    getAnnouncementStatus(announcement);
+
+  if (
+    [
+      'draft',
+      'unpublished',
+      'pending',
+      'review',
+      'awaiting_review',
+    ].includes(status)
+  ) {
+    return true;
+  }
+
+  if (
+    typeof announcement?.is_published ===
+      'boolean' &&
+    announcement.is_published === false
+  ) {
+    return true;
+  }
+
+  if (
+    typeof announcement?.published ===
+      'boolean' &&
+    announcement.published === false
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function isArchivedAnnouncement(announcement) {
+  return [
+    'archived',
+    'archive',
+    'expired',
+  ].includes(
+    getAnnouncementStatus(announcement),
+  );
+}
+
 /*
  * =========================================================
  * ADMIN DASHBOARD
@@ -217,8 +378,12 @@ function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [facilities, setFacilities] = useState([]);
-  const [announcements, setAnnouncements] = useState([]);
+  const [announcements, setAnnouncements] =
+    useState([]);
   const [activities, setActivities] = useState([]);
+
+  const [announcementTotal, setAnnouncementTotal] =
+    useState(0);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -228,7 +393,8 @@ function AdminDashboard() {
     new Date(),
   );
 
-  const [lastUpdated, setLastUpdated] = useState(null);
+  const [lastUpdated, setLastUpdated] =
+    useState(null);
 
   const [health, setHealth] = useState({
     api: 'checking',
@@ -254,17 +420,36 @@ function AdminDashboard() {
       setError('');
 
       const requests = await Promise.allSettled([
+        /*
+         * Users
+         */
         api.get('/auth/users/'),
+
+        /*
+         * Bookings
+         */
         api.get('/bookings/management/'),
+
+        /*
+         * Facilities
+         */
         api.get('/facilities/management/'),
+
+        /*
+         * Announcements
+         */
         api.get('/announcements/'),
 
-        // Administrator system-wide activity
+        /*
+         * Administrator system-wide activity
+         */
         api.get(
           '/core/admin/activities/?limit=10',
         ),
 
-        // Core API health
+        /*
+         * Core system health
+         */
         api.get('/core/health/'),
       ]);
 
@@ -280,58 +465,81 @@ function AdminDashboard() {
       let failedRequests = 0;
 
       /*
+       * -------------------------------------------------------
        * USERS
+       * -------------------------------------------------------
        */
 
-      if (usersResponse.status === 'fulfilled') {
-        setUsers(
-          extractResults(
-            usersResponse.value.data,
-          ),
-        );
+      if (
+        usersResponse.status ===
+        'fulfilled'
+      ) {
+        const data =
+          usersResponse.value.data;
+
+        setUsers(extractResults(data));
       } else {
         failedRequests += 1;
       }
 
       /*
+       * -------------------------------------------------------
        * BOOKINGS
+       * -------------------------------------------------------
        */
 
-      if (bookingsResponse.status === 'fulfilled') {
-        setBookings(
-          extractResults(
-            bookingsResponse.value.data,
-          ),
-        );
+      if (
+        bookingsResponse.status ===
+        'fulfilled'
+      ) {
+        const data =
+          bookingsResponse.value.data;
+
+        setBookings(extractResults(data));
       } else {
         failedRequests += 1;
       }
 
       /*
+       * -------------------------------------------------------
        * FACILITIES
+       * -------------------------------------------------------
        */
 
-      if (facilitiesResponse.status === 'fulfilled') {
-        setFacilities(
-          extractResults(
-            facilitiesResponse.value.data,
-          ),
-        );
+      if (
+        facilitiesResponse.status ===
+        'fulfilled'
+      ) {
+        const data =
+          facilitiesResponse.value.data;
+
+        setFacilities(extractResults(data));
       } else {
         failedRequests += 1;
       }
 
       /*
+       * -------------------------------------------------------
        * ANNOUNCEMENTS
+       * -------------------------------------------------------
        */
 
       if (
         announcementsResponse.status ===
         'fulfilled'
       ) {
-        setAnnouncements(
-          extractResults(
-            announcementsResponse.value.data,
+        const data =
+          announcementsResponse.value.data;
+
+        const results =
+          extractResults(data);
+
+        setAnnouncements(results);
+
+        setAnnouncementTotal(
+          extractTotal(
+            data,
+            results.length,
           ),
         );
       } else {
@@ -339,32 +547,29 @@ function AdminDashboard() {
       }
 
       /*
+       * -------------------------------------------------------
        * SYSTEM ACTIVITY
+       * -------------------------------------------------------
        */
 
       if (
         activitiesResponse.status ===
         'fulfilled'
       ) {
+        const data =
+          activitiesResponse.value.data;
+
         setActivities(
-          extractResults(
-            activitiesResponse.value.data,
-          ),
+          extractResults(data),
         );
       } else {
         failedRequests += 1;
       }
 
       /*
+       * -------------------------------------------------------
        * HEALTH
-       *
-       * Supports both:
-       *
-       * "healthy"
-       *
-       * and the current endpoint:
-       *
-       * "ok"
+       * -------------------------------------------------------
        */
 
       if (
@@ -387,12 +592,14 @@ function AdminDashboard() {
         const authenticationHealthy =
           healthData.authentication ===
             'healthy' ||
-          healthData.authentication === 'ok';
+          healthData.authentication ===
+            'ok';
 
         const applicationHealthy =
           healthData.application ===
             'healthy' ||
-          healthData.application === 'ok' ||
+          healthData.application ===
+            'ok' ||
           healthData.status === 'healthy' ||
           healthData.status === 'ok';
 
@@ -417,11 +624,10 @@ function AdminDashboard() {
         });
       } else {
         /*
-         * The API itself responded to the other
-         * requests, therefore the API is reachable
-         * even if /core/health/ is unavailable.
+         * If the health endpoint failed but other
+         * API endpoints worked, the API itself is
+         * still reachable.
          */
-
         const apiReachable =
           usersResponse.status ===
             'fulfilled' ||
@@ -527,12 +733,16 @@ function AdminDashboard() {
       (item) => item.is_active !== false,
     ).length;
 
+    const inactive =
+      users.length - active;
+
     return {
       total: users.length,
       students,
       officers,
       admins,
       active,
+      inactive,
     };
   }, [users]);
 
@@ -552,30 +762,53 @@ function AdminDashboard() {
         values.includes(status),
       ).length;
 
+    const pending = count([
+      'pending',
+      'requested',
+      'submitted',
+      'awaiting_approval',
+      'under_review',
+    ]);
+
+    const approved = count([
+      'approved',
+      'confirmed',
+      'accepted',
+    ]);
+
+    const rejected = count([
+      'rejected',
+      'declined',
+      'denied',
+    ]);
+
+    const cancelled = count([
+      'cancelled',
+      'canceled',
+    ]);
+
+    const completed = count([
+      'completed',
+      'complete',
+      'finished',
+    ]);
+
+    const other =
+      bookings.length -
+      pending -
+      approved -
+      rejected -
+      cancelled -
+      completed;
+
     return {
       total: bookings.length,
-
-      pending: count([
-        'pending',
-        'requested',
-        'submitted',
-      ]),
-
-      approved: count([
-        'approved',
-        'confirmed',
-        'accepted',
-      ]),
-
-      rejected: count([
-        'rejected',
-        'declined',
-      ]),
-
-      cancelled: count([
-        'cancelled',
-        'canceled',
-      ]),
+      pending,
+      approved,
+      rejected,
+      cancelled,
+      completed,
+      other: Math.max(other, 0),
     };
   }, [bookings]);
 
@@ -603,12 +836,14 @@ function AdminDashboard() {
       'active',
       'operational',
       'working',
+      'ready',
     ];
 
     const maintenanceStatuses = [
       'maintenance',
       'under_maintenance',
       'repair',
+      'under_repair',
     ];
 
     const inactiveStatuses = [
@@ -641,11 +876,18 @@ function AdminDashboard() {
         ),
       ).length;
 
+    const unknown =
+      facilities.length -
+      available -
+      maintenance -
+      inactive;
+
     return {
       total: facilities.length,
       available,
       maintenance,
       inactive,
+      unknown: Math.max(unknown, 0),
     };
   }, [facilities]);
 
@@ -664,7 +906,72 @@ function AdminDashboard() {
 
   /*
    * =========================================================
-   * USER DISTRIBUTION
+   * ANNOUNCEMENT ANALYTICS
+   * =========================================================
+   */
+
+  const announcementStats = useMemo(() => {
+    const published =
+      announcements.filter(
+        isPublishedAnnouncement,
+      ).length;
+
+    const drafts =
+      announcements.filter(
+        isDraftAnnouncement,
+      ).length;
+
+    const archived =
+      announcements.filter(
+        isArchivedAnnouncement,
+      ).length;
+
+    const scheduled =
+      announcements.filter(
+        (announcement) =>
+          getAnnouncementStatus(
+            announcement,
+          ) === 'scheduled',
+      ).length;
+
+    const classified =
+      published +
+      drafts +
+      archived +
+      scheduled;
+
+    const unknown = Math.max(
+      announcements.length -
+        classified,
+      0,
+    );
+
+    /*
+     * When the API exposes a total count
+     * larger than the current page, retain
+     * that total for the main metric.
+     */
+    const total =
+      announcementTotal ||
+      announcements.length;
+
+    return {
+      total,
+      visible: announcements.length,
+      published,
+      drafts,
+      archived,
+      scheduled,
+      unknown,
+    };
+  }, [
+    announcements,
+    announcementTotal,
+  ]);
+
+  /*
+   * =========================================================
+   * ROLE DISTRIBUTION
    * =========================================================
    */
 
@@ -805,39 +1112,148 @@ function AdminDashboard() {
 
   /*
    * =========================================================
-   * ADMIN ACTION QUEUE
+   * ACTIVITY ANALYTICS
    * =========================================================
    */
 
-  const pendingActions = useMemo(
-    () => [
-      {
+  const activityStats = useMemo(() => {
+    const userActivities = activities.filter(
+      (activity) =>
+        getActivityType(activity) ===
+        'user',
+    ).length;
+
+    const bookingActivities =
+      activities.filter(
+        (activity) =>
+          getActivityType(activity) ===
+          'booking',
+      ).length;
+
+    const facilityActivities =
+      activities.filter(
+        (activity) =>
+          getActivityType(activity) ===
+          'facility',
+      ).length;
+
+    const announcementActivities =
+      activities.filter(
+        (activity) =>
+          getActivityType(activity) ===
+          'announcement',
+      ).length;
+
+    const securityActivities =
+      activities.filter((activity) => {
+        const action =
+          normalizeStatus(
+            activity?.action,
+          );
+
+        return (
+          action.includes('login') ||
+          action.includes('logout') ||
+          action.includes('password') ||
+          action.includes('security')
+        );
+      }).length;
+
+    return {
+      total: activities.length,
+      user: userActivities,
+      booking: bookingActivities,
+      facility: facilityActivities,
+      announcement:
+        announcementActivities,
+      security: securityActivities,
+    };
+  }, [activities]);
+
+  /*
+   * =========================================================
+   * ADMIN ACTION QUEUE
+   *
+   * Only actionable items belong here.
+   * Informational totals such as "published
+   * announcements" should NOT be treated as
+   * pending work.
+   * =========================================================
+   */
+
+  const pendingActions = useMemo(() => {
+    const actions = [];
+
+    if (bookingStats.pending > 0) {
+      actions.push({
         label: 'Pending booking requests',
+        description:
+          'Requests waiting for review',
         value: bookingStats.pending,
         icon: Clock3,
         className: 'warning',
         path: '/admin/bookings',
-      },
-      {
+        priority: 1,
+      });
+    }
+
+    if (announcementStats.drafts > 0) {
+      actions.push({
+        label: 'Draft announcements',
+        description:
+          'Announcements awaiting publication',
+        value: announcementStats.drafts,
+        icon: Bell,
+        className: 'info',
+        path: '/admin/announcements',
+        priority: 2,
+      });
+    }
+
+    if (facilityStats.maintenance > 0) {
+      actions.push({
         label: 'Facilities under maintenance',
+        description:
+          'Infrastructure requiring attention',
         value: facilityStats.maintenance,
         icon: Building2,
         className: 'danger',
         path: '/admin/facilities',
-      },
-      {
-        label: 'Published announcements',
-        value: announcements.length,
-        icon: Bell,
-        className: 'info',
-        path: '/admin/announcements',
-      },
-    ],
-    [
-      bookingStats.pending,
-      facilityStats.maintenance,
-      announcements.length,
-    ],
+        priority: 3,
+      });
+    }
+
+    if (userStats.inactive > 0) {
+      actions.push({
+        label: 'Inactive user accounts',
+        description:
+          'Accounts that may require review',
+        value: userStats.inactive,
+        icon: UserCog,
+        className: 'warning',
+        path: '/admin/users',
+        priority: 4,
+      });
+    }
+
+    return actions.sort(
+      (a, b) => a.priority - b.priority,
+    );
+  }, [
+    bookingStats.pending,
+    announcementStats.drafts,
+    facilityStats.maintenance,
+    userStats.inactive,
+  ]);
+
+  const totalPendingActions = useMemo(
+    () =>
+      pendingActions.reduce(
+        (sum, item) =>
+          sum + item.value,
+        0,
+      ),
+    [pendingActions],
   );
 
   /*
@@ -876,6 +1292,13 @@ function AdminDashboard() {
     [health],
   );
 
+  const allCoreServicesHealthy =
+    health.api === 'healthy' &&
+    health.database === 'healthy' &&
+    health.authentication ===
+      'healthy' &&
+    health.application === 'healthy';
+
   function getHealthLabel(status) {
     switch (status) {
       case 'healthy':
@@ -910,6 +1333,12 @@ function AdminDashboard() {
         return 'checking';
     }
   }
+
+  /*
+   * =========================================================
+   * RENDER
+   * =========================================================
+   */
 
   return (
     <section className="admin-dashboard">
@@ -1104,6 +1533,8 @@ function AdminDashboard() {
 
         <section className="admin-metrics-grid">
 
+          {/* USERS */}
+
           <article className="admin-metric-card users-card">
 
             <div className="admin-metric-top">
@@ -1154,6 +1585,8 @@ function AdminDashboard() {
 
           </article>
 
+          {/* BOOKINGS */}
+
           <article className="admin-metric-card booking-card">
 
             <div className="admin-metric-top">
@@ -1195,14 +1628,16 @@ function AdminDashboard() {
 
               <span>
                 {formatNumber(
-                  bookingStats.rejected,
+                  bookingStats.completed,
                 )}{' '}
-                rejected
+                completed
               </span>
 
             </div>
 
           </article>
+
+          {/* FACILITIES */}
 
           <article className="admin-metric-card facility-card">
 
@@ -1253,6 +1688,8 @@ function AdminDashboard() {
 
           </article>
 
+          {/* ANNOUNCEMENTS */}
+
           <article className="admin-metric-card announcement-card">
 
             <div className="admin-metric-top">
@@ -1262,7 +1699,10 @@ function AdminDashboard() {
               </div>
 
               <span className="admin-metric-badge neutral">
-                Live
+                {formatNumber(
+                  announcementStats.drafts,
+                )}{' '}
+                drafts
               </span>
 
             </div>
@@ -1271,18 +1711,28 @@ function AdminDashboard() {
               {loading
                 ? '—'
                 : formatNumber(
-                    announcements.length,
+                    announcementStats.total,
                   )}
             </div>
 
             <div className="admin-metric-label">
-              Published announcements
+              Total announcements
             </div>
 
             <div className="admin-metric-footer">
 
               <span>
-                Current platform communication
+                {formatNumber(
+                  announcementStats.published,
+                )}{' '}
+                published
+              </span>
+
+              <span>
+                {formatNumber(
+                  announcementStats.drafts,
+                )}{' '}
+                awaiting publication
               </span>
 
             </div>
@@ -1386,6 +1836,31 @@ function AdminDashboard() {
 
             </div>
 
+            <div className="admin-analytics-meta">
+
+              <span>
+                Active accounts
+              </span>
+
+              <strong>
+                {formatNumber(
+                  userStats.active,
+                )}
+              </strong>
+
+              <span>
+                {userStats.total
+                  ? Math.round(
+                      (userStats.active /
+                        userStats.total) *
+                        100,
+                    )
+                  : 0}
+                % active
+              </span>
+
+            </div>
+
           </article>
 
           {/* BOOKING DISTRIBUTION */}
@@ -1484,6 +1959,31 @@ function AdminDashboard() {
 
             </div>
 
+            <div className="admin-analytics-meta">
+
+              <span>
+                Completion
+              </span>
+
+              <strong>
+                {formatNumber(
+                  bookingStats.completed,
+                )}
+              </strong>
+
+              <span>
+                {bookingStats.total
+                  ? Math.round(
+                      (bookingStats.completed /
+                        bookingStats.total) *
+                        100,
+                    )
+                  : 0}
+                % completed
+              </span>
+
+            </div>
+
           </article>
 
         </section>
@@ -1511,61 +2011,76 @@ function AdminDashboard() {
               </div>
 
               <span className="admin-panel-count">
-                {pendingActions.reduce(
-                  (sum, item) =>
-                    sum + item.value,
-                  0,
+                {formatNumber(
+                  totalPendingActions,
                 )}
               </span>
 
             </div>
 
-            <div className="admin-action-list">
+            {pendingActions.length > 0 ? (
+              <div className="admin-action-list">
 
-              {pendingActions.map((item) => {
-                const Icon = item.icon;
+                {pendingActions.map((item) => {
+                  const Icon = item.icon;
 
-                return (
-                  <Link
-                    to={item.path}
-                    className="admin-action-item"
-                    key={item.label}
-                  >
-
-                    <div
-                      className={`admin-action-icon ${item.className}`}
+                  return (
+                    <Link
+                      to={item.path}
+                      className="admin-action-item"
+                      key={item.label}
                     >
-                      <Icon size={18} />
-                    </div>
 
-                    <div className="admin-action-content">
+                      <div
+                        className={`admin-action-icon ${item.className}`}
+                      >
+                        <Icon size={18} />
+                      </div>
 
-                      <strong>
-                        {item.label}
+                      <div className="admin-action-content">
+
+                        <strong>
+                          {item.label}
+                        </strong>
+
+                        <span>
+                          {item.description}
+                        </span>
+
+                      </div>
+
+                      <strong className="admin-action-value">
+                        {formatNumber(
+                          item.value,
+                        )}
                       </strong>
 
-                      <span>
-                        Open management area
-                      </span>
+                      <ArrowUpRight
+                        size={16}
+                        className="admin-action-arrow"
+                      />
 
-                    </div>
+                    </Link>
+                  );
+                })}
 
-                    <strong className="admin-action-value">
-                      {formatNumber(
-                        item.value,
-                      )}
-                    </strong>
+              </div>
+            ) : (
+              <div className="admin-empty-state">
 
-                    <ArrowUpRight
-                      size={16}
-                      className="admin-action-arrow"
-                    />
+                <CheckCircle2 size={22} />
 
-                  </Link>
-                );
-              })}
+                <strong>
+                  No pending actions
+                </strong>
 
-            </div>
+                <span>
+                  The administrative queue is
+                  currently clear.
+                </span>
+
+              </div>
+            )}
 
           </article>
 
@@ -1719,9 +2234,14 @@ function AdminDashboard() {
                           activity,
                         );
 
+                      const description =
+                        getActivityDescription(
+                          activity,
+                        );
+
                       const Icon =
                         getActivityIcon(
-                          title,
+                          `${activity?.action || ''} ${activity?.activity_type || ''} ${title}`,
                         );
 
                       return (
@@ -1758,6 +2278,14 @@ function AdminDashboard() {
                               )}
                             </span>
 
+                            {description &&
+                              description !==
+                                title && (
+                                <small>
+                                  {description}
+                                </small>
+                              )}
+
                           </div>
 
                           <span className="admin-activity-arrow">
@@ -1787,6 +2315,26 @@ function AdminDashboard() {
               </div>
             )}
 
+            {activities.length > 0 && (
+              <div className="admin-activity-summary">
+
+                <span>
+                  {formatNumber(
+                    activityStats.total,
+                  )}{' '}
+                  recent events loaded
+                </span>
+
+                <span>
+                  {formatNumber(
+                    activityStats.security,
+                  )}{' '}
+                  security events
+                </span>
+
+              </div>
+            )}
+
           </article>
 
           {/* ALERTS */}
@@ -1811,68 +2359,160 @@ function AdminDashboard() {
 
             <div className="admin-alert-list">
 
-              <div className="admin-alert-item warning">
+              {/* PENDING BOOKINGS */}
 
-                <div className="admin-alert-icon">
-                  <Clock3 size={17} />
-                </div>
+              {bookingStats.pending > 0 && (
+                <div className="admin-alert-item warning">
 
-                <div>
+                  <div className="admin-alert-icon">
+                    <Clock3 size={17} />
+                  </div>
 
-                  <strong>
-                    {formatNumber(
-                      bookingStats.pending,
-                    )}{' '}
-                    pending booking requests
-                  </strong>
+                  <div>
 
-                  <span>
-                    Requests currently waiting
-                    for administrative action.
-                  </span>
+                    <strong>
+                      {formatNumber(
+                        bookingStats.pending,
+                      )}{' '}
+                      pending booking
+                      {bookingStats.pending ===
+                      1
+                        ? ''
+                        : 's'}
+                    </strong>
 
-                </div>
+                    <span>
+                      Requests currently
+                      waiting for
+                      administrative action.
+                    </span>
 
-                <Link to="/admin/bookings">
-                  Review
-                </Link>
+                  </div>
 
-              </div>
-
-              <div className="admin-alert-item danger">
-
-                <div className="admin-alert-icon">
-                  <Building2 size={17} />
-                </div>
-
-                <div>
-
-                  <strong>
-                    {formatNumber(
-                      facilityStats.maintenance,
-                    )}{' '}
-                    facilities under
-                    maintenance
-                  </strong>
-
-                  <span>
-                    Current infrastructure
-                    requiring attention.
-                  </span>
+                  <Link to="/admin/bookings">
+                    Review
+                  </Link>
 
                 </div>
+              )}
 
-                <Link to="/admin/facilities">
-                  Inspect
-                </Link>
+              {/* MAINTENANCE */}
 
-              </div>
+              {facilityStats.maintenance >
+                0 && (
+                <div className="admin-alert-item danger">
+
+                  <div className="admin-alert-icon">
+                    <Building2 size={17} />
+                  </div>
+
+                  <div>
+
+                    <strong>
+                      {formatNumber(
+                        facilityStats.maintenance,
+                      )}{' '}
+                      facilit
+                      {facilityStats.maintenance ===
+                      1
+                        ? 'y'
+                        : 'ies'}{' '}
+                      under maintenance
+                    </strong>
+
+                    <span>
+                      Current
+                      infrastructure
+                      requiring attention.
+                    </span>
+
+                  </div>
+
+                  <Link to="/admin/facilities">
+                    Inspect
+                  </Link>
+
+                </div>
+              )}
+
+              {/* DRAFT ANNOUNCEMENTS */}
+
+              {announcementStats.drafts >
+                0 && (
+                <div className="admin-alert-item info">
+
+                  <div className="admin-alert-icon">
+                    <Bell size={17} />
+                  </div>
+
+                  <div>
+
+                    <strong>
+                      {formatNumber(
+                        announcementStats.drafts,
+                      )}{' '}
+                      draft announcement
+                      {announcementStats.drafts ===
+                      1
+                        ? ''
+                        : 's'}
+                    </strong>
+
+                    <span>
+                      Communication content
+                      awaiting publication.
+                    </span>
+
+                  </div>
+
+                  <Link to="/admin/announcements">
+                    Review
+                  </Link>
+
+                </div>
+              )}
+
+              {/* INACTIVE USERS */}
+
+              {userStats.inactive > 0 && (
+                <div className="admin-alert-item warning">
+
+                  <div className="admin-alert-icon">
+                    <UserCog size={17} />
+                  </div>
+
+                  <div>
+
+                    <strong>
+                      {formatNumber(
+                        userStats.inactive,
+                      )}{' '}
+                      inactive account
+                      {userStats.inactive ===
+                      1
+                        ? ''
+                        : 's'}
+                    </strong>
+
+                    <span>
+                      Accounts available for
+                      administrative review.
+                    </span>
+
+                  </div>
+
+                  <Link to="/admin/users">
+                    Review
+                  </Link>
+
+                </div>
+              )}
+
+              {/* CORE HEALTH */}
 
               <div
                 className={`admin-alert-item ${
-                  health.api === 'healthy' &&
-                  health.database ===
-                    'healthy'
+                  allCoreServicesHealthy
                     ? 'success'
                     : 'warning'
                 }`}
@@ -1880,10 +2520,7 @@ function AdminDashboard() {
 
                 <div className="admin-alert-icon">
 
-                  {health.api ===
-                    'healthy' &&
-                  health.database ===
-                    'healthy' ? (
+                  {allCoreServicesHealthy ? (
                     <CheckCircle2 size={17} />
                   ) : (
                     <AlertTriangle size={17} />
@@ -1894,34 +2531,67 @@ function AdminDashboard() {
                 <div>
 
                   <strong>
-                    {health.api ===
-                      'healthy' &&
-                    health.database ===
-                      'healthy'
-                      ? 'Core services operational'
+                    {allCoreServicesHealthy
+                      ? 'All core services operational'
                       : 'System health requires attention'}
                   </strong>
 
                   <span>
-                    API and database health
-                    are monitored
-                    automatically.
+                    API, database,
+                    authentication and
+                    application health are
+                    monitored automatically.
                   </span>
 
                 </div>
 
                 <span className="admin-alert-resolved">
 
-                  {health.api ===
-                    'healthy' &&
-                  health.database ===
-                    'healthy'
+                  {allCoreServicesHealthy
                     ? 'Healthy'
                     : 'Check'}
 
                 </span>
 
               </div>
+
+              {/* CLEAR STATE */}
+
+              {bookingStats.pending ===
+                0 &&
+                facilityStats.maintenance ===
+                  0 &&
+                announcementStats.drafts ===
+                  0 &&
+                userStats.inactive ===
+                  0 &&
+                allCoreServicesHealthy && (
+                  <div className="admin-alert-item success">
+
+                    <div className="admin-alert-icon">
+                      <CheckCircle2 size={17} />
+                    </div>
+
+                    <div>
+
+                      <strong>
+                        No outstanding alerts
+                      </strong>
+
+                      <span>
+                        Platform operations are
+                        currently within normal
+                        conditions.
+                      </span>
+
+                    </div>
+
+                    <span className="admin-alert-resolved">
+                      Clear
+                    </span>
+
+                  </div>
+                )}
 
             </div>
 

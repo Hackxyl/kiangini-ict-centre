@@ -1,4 +1,4 @@
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import {
   Activity,
   Bell,
@@ -52,30 +52,36 @@ function getDisplayName(user) {
 
 function AdminSidebar({ open, onClose }) {
   const { user, logout } = useAuth();
+  const location = useLocation();
 
   const navigation = [
     {
       label: 'Dashboard',
+      description: 'System overview',
       icon: LayoutDashboard,
       path: '/admin/dashboard',
     },
     {
       label: 'Users',
+      description: 'Manage user accounts',
       icon: Users,
       path: '/admin/users',
     },
     {
-      label: 'Booking Management',
+      label: 'Bookings',
+      description: 'Manage facility bookings',
       icon: CalendarCheck,
       path: '/admin/bookings',
     },
     {
       label: 'Facilities',
+      description: 'Manage ICT facilities',
       icon: Monitor,
       path: '/admin/facilities',
     },
     {
       label: 'Announcements',
+      description: 'Manage announcements',
       icon: Bell,
       path: '/admin/announcements',
     },
@@ -84,20 +90,73 @@ function AdminSidebar({ open, onClose }) {
   const systemNavigation = [
     {
       label: 'Activity',
+      description: 'System activity history',
       icon: Activity,
       path: '/admin/activity',
     },
     {
       label: 'Settings',
+      description: 'Account and system settings',
       icon: Settings,
       path: '/admin/settings',
     },
   ];
 
+  const isItemActive = (path) => {
+    if (path === '/admin/dashboard') {
+      return location.pathname === path;
+    }
+
+    return (
+      location.pathname === path ||
+      location.pathname.startsWith(`${path}/`)
+    );
+  };
+
   const handleLogout = async () => {
     await logout();
     onClose();
   };
+
+  const renderNavigation = (items) =>
+    items.map((item) => {
+      const Icon = item.icon;
+      const active = isItemActive(item.path);
+
+      return (
+        <NavLink
+          key={item.path}
+          to={item.path}
+          title={item.description}
+          className={`admin-nav-link ${
+            active ? 'active' : ''
+          }`}
+          aria-current={active ? 'page' : undefined}
+          onClick={onClose}
+        >
+          <span className="admin-nav-icon">
+            <Icon size={18} strokeWidth={active ? 2.2 : 1.9} />
+          </span>
+
+          <span className="admin-nav-content">
+            <span className="admin-nav-text">
+              {item.label}
+            </span>
+
+            <span className="admin-nav-description">
+              {item.description}
+            </span>
+          </span>
+
+          {active && (
+            <span
+              className="admin-nav-active-indicator"
+              aria-hidden="true"
+            />
+          )}
+        </NavLink>
+      );
+    });
 
   return (
     <>
@@ -115,6 +174,7 @@ function AdminSidebar({ open, onClose }) {
         }`}
         aria-label="Administration navigation"
       >
+        {/* Header */}
         <div className="admin-sidebar-header">
           <Link
             to="/"
@@ -144,6 +204,7 @@ function AdminSidebar({ open, onClose }) {
           </button>
         </div>
 
+        {/* Administrator */}
         <div className="admin-sidebar-user">
           <div
             className="admin-avatar"
@@ -153,73 +214,48 @@ function AdminSidebar({ open, onClose }) {
           </div>
 
           <div className="admin-user-info">
-            <strong>
-              {getDisplayName(user)}
-            </strong>
+            <strong>{getDisplayName(user)}</strong>
 
-            <span>Administrator</span>
+            <span>
+              <i aria-hidden="true" />
+              Administrator
+            </span>
           </div>
         </div>
 
-        <nav className="admin-sidebar-nav">
-          <span className="admin-nav-label">
-            MAIN MENU
-          </span>
+        {/* Navigation */}
+        <nav
+          className="admin-sidebar-nav"
+          aria-label="Admin sections"
+        >
+          <div className="admin-nav-section">
+            <span className="admin-nav-label">
+              MAIN MENU
+            </span>
 
-          <div className="admin-nav-list">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `admin-nav-link ${
-                      isActive ? 'active' : ''
-                    }`
-                  }
-                  onClick={onClose}
-                >
-                  <Icon size={18} />
-                  <span>{item.label}</span>
-                </NavLink>
-              );
-            })}
+            <div className="admin-nav-list">
+              {renderNavigation(navigation)}
+            </div>
           </div>
 
-          <span className="admin-nav-label admin-system-label">
-            SYSTEM
-          </span>
+          <div className="admin-nav-section admin-system-section">
+            <span className="admin-nav-label">
+              SYSTEM
+            </span>
 
-          <div className="admin-nav-list">
-            {systemNavigation.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `admin-nav-link ${
-                      isActive ? 'active' : ''
-                    }`
-                  }
-                  onClick={onClose}
-                >
-                  <Icon size={18} />
-                  <span>{item.label}</span>
-                </NavLink>
-              );
-            })}
+            <div className="admin-nav-list">
+              {renderNavigation(systemNavigation)}
+            </div>
           </div>
         </nav>
 
+        {/* Bottom area */}
         <div className="admin-sidebar-bottom">
           <div className="admin-sidebar-help">
-            <span>
-              System Administration
-            </span>
+            <div className="admin-help-heading">
+              <span className="admin-help-dot" />
+              <span>System Administration</span>
+            </div>
 
             <Link
               to="/contact"

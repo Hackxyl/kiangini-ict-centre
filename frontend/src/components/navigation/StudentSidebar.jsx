@@ -1,4 +1,4 @@
-import { NavLink, Link } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import {
   Bell,
   CalendarCheck,
@@ -19,30 +19,18 @@ function getInitials(user) {
     return 'SU';
   }
 
-  const firstName =
-    user.first_name?.trim() || '';
-
-  const lastName =
-    user.last_name?.trim() || '';
+  const firstName = user.first_name?.trim() || '';
+  const lastName = user.last_name?.trim() || '';
 
   if (firstName && lastName) {
-    return (
-      `${firstName.charAt(0)}${lastName.charAt(0)}`
-        .toUpperCase()
-    );
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   }
 
   if (firstName) {
-    return firstName
-      .substring(0, 2)
-      .toUpperCase();
+    return firstName.substring(0, 2).toUpperCase();
   }
 
-  return (
-    user.email
-      ?.substring(0, 2)
-      .toUpperCase() || 'SU'
-  );
+  return user.email?.substring(0, 2).toUpperCase() || 'SU';
 }
 
 function getDisplayName(user) {
@@ -51,8 +39,7 @@ function getDisplayName(user) {
   }
 
   const fullName =
-    `${user.first_name || ''} ${user.last_name || ''}`
-      .trim();
+    `${user.first_name || ''} ${user.last_name || ''}`.trim();
 
   return (
     fullName ||
@@ -77,29 +64,31 @@ function getRoleLabel(role) {
 }
 
 function StudentSidebar({ open, onClose }) {
-  const {
-    user,
-    logout,
-  } = useAuth();
+  const { user, logout } = useAuth();
+  const location = useLocation();
 
   const navigation = [
     {
-      label: 'Overview',
+      label: 'Dashboard',
+      description: 'Your student overview',
       icon: Home,
       path: '/student/dashboard',
     },
     {
       label: 'My Bookings',
+      description: 'View and manage bookings',
       icon: CalendarCheck,
       path: '/student/bookings',
     },
     {
       label: 'Announcements',
+      description: 'Latest ICT Centre updates',
       icon: Bell,
       path: '/student/announcements',
     },
     {
       label: 'Activity',
+      description: 'View your recent activity',
       icon: ClipboardList,
       path: '/student/activity',
     },
@@ -108,20 +97,76 @@ function StudentSidebar({ open, onClose }) {
   const accountNavigation = [
     {
       label: 'Profile',
+      description: 'Manage your profile',
       icon: UserRound,
       path: '/student/profile',
     },
     {
       label: 'Settings',
+      description: 'Manage account settings',
       icon: Settings,
       path: '/student/settings',
     },
   ];
 
+  const isItemActive = (path) => {
+    if (path === '/student/dashboard') {
+      return location.pathname === path;
+    }
+
+    return (
+      location.pathname === path ||
+      location.pathname.startsWith(`${path}/`)
+    );
+  };
+
   const handleLogout = async () => {
     await logout();
     onClose();
   };
+
+  const renderNavigation = (items) =>
+    items.map((item) => {
+      const Icon = item.icon;
+      const active = isItemActive(item.path);
+
+      return (
+        <NavLink
+          key={item.path}
+          to={item.path}
+          title={item.description}
+          className={`student-nav-link ${
+            active ? 'active' : ''
+          }`}
+          aria-current={active ? 'page' : undefined}
+          onClick={onClose}
+        >
+          <span className="student-nav-icon">
+            <Icon
+              size={18}
+              strokeWidth={active ? 2.2 : 1.9}
+            />
+          </span>
+
+          <span className="student-nav-content">
+            <span className="student-nav-text">
+              {item.label}
+            </span>
+
+            <span className="student-nav-description">
+              {item.description}
+            </span>
+          </span>
+
+          {active && (
+            <span
+              className="student-nav-active-indicator"
+              aria-hidden="true"
+            />
+          )}
+        </NavLink>
+      );
+    });
 
   return (
     <>
@@ -139,10 +184,8 @@ function StudentSidebar({ open, onClose }) {
         }`}
         aria-label="Student navigation"
       >
-
         {/* Header */}
         <div className="student-sidebar-header">
-
           <Link
             to="/"
             className="student-sidebar-brand"
@@ -150,9 +193,9 @@ function StudentSidebar({ open, onClose }) {
           >
             <span className="student-brand-mark">
               <img
-      src="/images/hero-ict.png"
-      alt="Kiangini ICT Centre"
-    />
+                src="/images/hero-ict.png"
+                alt="Kiangini ICT Centre"
+              />
             </span>
 
             <span className="student-brand-text">
@@ -169,12 +212,10 @@ function StudentSidebar({ open, onClose }) {
           >
             <ChevronLeft size={19} />
           </button>
-
         </div>
 
-        {/* User */}
+        {/* Student profile */}
         <div className="student-sidebar-user">
-
           <div
             className="student-avatar"
             aria-hidden="true"
@@ -183,92 +224,49 @@ function StudentSidebar({ open, onClose }) {
           </div>
 
           <div className="student-user-info">
-
-            <strong>
-              {getDisplayName(user)}
-            </strong>
+            <strong>{getDisplayName(user)}</strong>
 
             <span>
+              <i aria-hidden="true" />
               {getRoleLabel(user?.role)}
             </span>
-
           </div>
-
         </div>
 
         {/* Navigation */}
-        <nav className="student-sidebar-nav">
+        <nav
+          className="student-sidebar-nav"
+          aria-label="Student sections"
+        >
+          <div className="student-nav-section">
+            <span className="student-nav-label">
+              MAIN MENU
+            </span>
 
-          <span className="student-nav-label">
-            MAIN MENU
-          </span>
-
-          <div className="student-nav-list">
-
-            {navigation.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `student-nav-link ${
-                      isActive
-                        ? 'active'
-                        : ''
-                    }`
-                  }
-                  onClick={onClose}
-                >
-                  <Icon size={18} />
-                  <span>{item.label}</span>
-                </NavLink>
-              );
-            })}
-
+            <div className="student-nav-list">
+              {renderNavigation(navigation)}
+            </div>
           </div>
 
-          <span className="student-nav-label student-account-label">
-            ACCOUNT
-          </span>
+          <div className="student-nav-section student-account-section">
+            <span className="student-nav-label">
+              ACCOUNT
+            </span>
 
-          <div className="student-nav-list">
-
-            {accountNavigation.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `student-nav-link ${
-                      isActive
-                        ? 'active'
-                        : ''
-                    }`
-                  }
-                  onClick={onClose}
-                >
-                  <Icon size={18} />
-                  <span>{item.label}</span>
-                </NavLink>
-              );
-            })}
-
+            <div className="student-nav-list">
+              {renderNavigation(accountNavigation)}
+            </div>
           </div>
-
         </nav>
 
         {/* Bottom */}
         <div className="student-sidebar-bottom">
-
           <div className="student-sidebar-help">
+            <div className="student-help-heading">
+              <span className="student-help-dot" />
 
-            <span>
-              Need assistance?
-            </span>
+              <span>Need assistance?</span>
+            </div>
 
             <Link
               to="/contact"
@@ -276,7 +274,6 @@ function StudentSidebar({ open, onClose }) {
             >
               Contact ICT Support
             </Link>
-
           </div>
 
           <button
@@ -287,9 +284,7 @@ function StudentSidebar({ open, onClose }) {
             <LogOut size={18} />
             <span>Logout</span>
           </button>
-
         </div>
-
       </aside>
     </>
   );
